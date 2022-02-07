@@ -1,0 +1,46 @@
+   
+    .big-container {
+        height: 30vw;
+        width: 50vw;
+    }
+
+    .folds-control {
+        padding-left: 6px;
+        cursor: pointer;
+    }
+
+    .medium-container {
+        height: 15vw;
+        width: 40vw;
+    }
+
+    label {
+        padding-right: 10px;
+    }
+
+    .table{
+        margin:5px;
+        display: table;
+        width: 100%;
+    }
+
+    
+    .column {
+        display: table-cell;
+        padding-left:4px;
+    }
+    .row{
+        padding-top: 20px;
+    }
+
+    .typeCounterValue{
+        font-size: 4rem;
+    }
+
+    .sectionHeader {
+        font-size: 1rem;
+    }
+
+    .typeCounterLabel {
+        padding-left: 5px;
+    }
