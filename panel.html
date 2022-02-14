@@ -1,76 +1,71 @@
-<!DOCTYPE html>
-<html lang="en">
-
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Client SDK Sandbox</title>
-    <script src="src-min/ace.js"></script>
-
     <link rel="stylesheet" href="mystyle.css" />
     <script src="goalTracker-mod.js"> </script>
-    
     <script src="panel.js" defer></script>
-
 </head>
-
 <body>
-    <div class="main-container table">
-        <div class="column">
-            <div id="experiments-container" class="row">
-                <label class="sectionHeader" onclick="javascript:hideToggle()">Matched Experiment Metrics</label>
-                <span class='folds-control unfold' style="display:none">(+)</span>
-                <span class='folds-control fold' style="display:none">(-)</span>
-                <div id="experimentsContainer" class="container medium-container"></div>
-            </div>
-            <div id="goals-container" class="row">
-                <label class="sectionHeader"  onclick="javascript:hideToggle()">Goals</label>
-                <span class='folds-control unfold'>(+)</span>
-                <span class='folds-control fold'>(-)</span>
-                <div id="flagGoalsContainer" class="container medium-container"></div>
-            </div>
 
-            <div id="evals-container" class="row">
-                <label class="sectionHeader"  onclick="javascript:hideToggle()">Feature Flags</label>
-                <!-- <select id="flagKey" type="text"></select>
-                <input type="button" value="evaluate" onclick="javascript:ldEvaluate()"> -->
-                <span class='folds-control unfold'>(+)</span>
-                <span class='folds-control fold'>(-)</span>
-                <div id="flagVariationContainer" class="container medium-container"></div>
+
+
+    <h3>Counters</h3>
+    <div id="typescounterContainer" class="table">
+        <div class="table-row">
+            <div id="custom" class="table-cell-counter ">
+                <span id="custom-value" class="type-counter large-value">0</span><label class="type-counter">custom
+                    events</label>
+            </div>
+            <div id="identify" class="table-cell-counter">
+                <span id="identify-value" class="type-counter large-value">0</span><label class="type-counter">identify
+                    events</label>
+            </div>
+            <div id="experiments" class="table-cell-counter">
+                <span id="experiments-value" class="type-counter large-value">0</span><label
+                    class="type-counter">experiment events </label>
             </div>
         </div>
-        <div class="column">
-            <div id="typescounter-container" class="table">
-                <div class="row">
-                    <div id="custom" class="column">
-                        <span id="custom-value" class="typeCounterValue">0</span><span class="typeCounterLabel">custom events</span>
-                    </div>
-                    <div id="identify" class="column">
-                        <span id="identify-value" class="typeCounterValue">0</span class="typeCounterLabel">identify events<span></span>
-                    </div>
-                    <div id="experiments" class="column">
-                        <span id="experiments-value" class="typeCounterValue">0</span class="typeCounterLabel">experiments on page<span></span>
-                    </div>
-                </div>
-                <div class="row">
-                    <div id="click" class="column">
-                        <span id="click-value" class="typeCounterValue">0</span><span class="typeCounterLabel">click events</span>
-                    </div>
-                    <div id="feature" class="column">
-                        <span id="feature-value" class="typeCounterValue">0</span><span class="typeCounterLabel">flags evaluated</span>
-                    </div>
-                </div>
-
-
-
+        <div class="table-row">
+            <div id="click" class="table-cell-counter">
+                <span id="click-value" class="type-counter large-value">0</span><label class="type-counter">click events
+                </label>
+            </div>
+            <div id="feature" class="table-cell-counter">
+                <span id="feature-value" class="type-counter large-value">0</span><label class="type-counter">flag
+                    evaluations</label>
             </div>
 
-            <div id='logs-container' class="row">
-                <label class="sectionHeader" onclick="javascript:hideToggle()">Sent/Received Events</label>
-                <span class='folds-control unfold'>(+)</span>
-                <span class='folds-control fold'>(-)</span>
-                <div id="logsContainer" class="container big-container"></div>
-            </div>
         </div>
+    </div>
+    <h3>Conversion Metrics</h3>
+    <div id="conversionMetricsContainer" class="table">
+        <div id="containerHeader" class="table-row">
+            <div class="table-head"><span>Enabled</span></div>
+            <div class="table-head"><span>Kind</span></div>
+            <div class="table-head"><span>Goal Key</span></div>
+            <div class="table-head"><span>URL Match</span></div>
+            <div class="table-head"><span>Target Match</span></div>
+        </div>
+        <div class="table-row metric">
+            <div class="table-cell">---</div>
+            <div class="table-cell">---</div>
+            <div class="table-cell">---</div>
+            <div class="table-cell">---</div>
+            <div class="table-cell">---</div>
+        </div>
+    </div>
+
+    <div id="experimentGoals">
+        <h3>Experiment Goals</h3>
+        <textarea class="experiments-details">
+        </textarea>
+    </div>
+    <div id="featureFlagsContainer">
+        <h3>Feature Flags</h3>
+        <textarea class="featureflags-details"></textarea>
+    </div>
+    <div id="networkDetailsContainer">
+        <h3> Events</h3>
+        <textarea id="networkDetails"></textarea>
     </div>
 
 </body>
