@@ -9,7 +9,9 @@ var extensionGlobals = {
             let ele = document.querySelector('textArea#networkDetails');
             ele.value = msg;
         }
-    }
+    },
+    eventSource:null,
+
 };
 
 main();
@@ -23,8 +25,32 @@ function main() {
     chrome.devtools.network.onRequestFinished.addListener(logNetwork);
     chrome.devtools.network.onRequestFinished.addListener(eventsHandler);
     chrome.devtools.network.onRequestFinished.addListener(evalxHandler);
+    
+    setTimeout(onEventSourceEvents, 5000);
 
     chrome.devtools.network.onNavigated.addListener(onNavHandler);
+}
+
+function  onEventSourceEvents(handler){
+    
+    if (extensionGlobals.eventSource ){
+        return;
+    }
+
+    chrome.devtools.network.getHAR(function(events){
+        if (!events || (events.entries && events.entries.length ==0)){
+            return;
+        }
+   
+        let eventSources= events.entries.filter ( ({_resourceType, request}) => (_resourceType === "eventsource" && request.url.includes('clientstream.launchdarkly.com')));
+
+        if (eventSources.length >0){
+            let [eventSource] = eventSources;
+            extensionGlobals.eventSource= eventSource.request;
+            eventStreamHandler(eventSource.request);
+        }
+    });
+    
 }
 
 function onNavHandler() {
@@ -55,19 +81,43 @@ function evalxHandler(request) {
         if (bodyObj.length == 0) {
             return;
         }
-        let bodyStrfy = JSON.stringify(bodyObj, null, 4);
 
         let ffTextArea = document.querySelector('.featureflags-details');
-        ffTextArea.value = bodyStrfy;
-
+        ffTextArea.value =  JSON.stringify(bodyObj, null, 4);;
         extensionGlobals.logEditor.insert("\n");
         extensionGlobals.logEditor.insert("======== RECEIVE EVENT START ========\n");
         extensionGlobals.logEditor.insert(`${request.request.method} url[${request.request.url}]`);
         extensionGlobals.logEditor.insert("\n");
-        extensionGlobals.logEditor.insert(bodyStrfy);
+        extensionGlobals.logEditor.insert(JSON.stringify(bodyObj));
         extensionGlobals.logEditor.insert("\n");
         extensionGlobals.logEditor.insert("======== RECEIVE EVENT END   ========\n");
     });
+}
+
+function eventStreamHandler(request) {
+    let {url} = request;
+    let source = new EventSource(url);
+
+    let logInsert = function(method, url, data){
+        extensionGlobals.logEditor.insert("\n");
+        extensionGlobals.logEditor.insert(`======== [${method}] - Stream RECEIVE EVENT START ========\n`);
+        extensionGlobals.logEditor.insert(`${method} url[${url}]`);
+        extensionGlobals.logEditor.insert("\n");
+        extensionGlobals.logEditor.insert(data);
+        extensionGlobals.logEditor.insert("\n");
+        extensionGlobals.logEditor.insert(`======== [${method}] - Stream RECEIVE EVENT END ========\n`);
+        
+    }
+    source.addEventListener('patch', function(e) {
+        logInsert("PATCH", url, e.data);
+        updateStreamEventsCounter();
+    }, false);
+    source.addEventListener('put', function(e) {
+        
+        logInsert("PUT", url, e.data);
+        updateStreamEventsCounter();
+    }, false);
+
 }
 
 function eventsHandler(request) {
@@ -84,7 +134,7 @@ function eventsHandler(request) {
     extensionGlobals.logEditor.insert("======== SENT EVENT START ========\n");
     extensionGlobals.logEditor.insert(`${request.request.method} url[${request.request.url}]`);
     extensionGlobals.logEditor.insert("\n");
-    extensionGlobals.logEditor.insert(JSON.stringify(events, null, 4));
+    extensionGlobals.logEditor.insert(JSON.stringify(events));
     extensionGlobals.logEditor.insert("\n");
     extensionGlobals.logEditor.insert("======== SENT EVENT END   ========\n");
 
@@ -107,6 +157,11 @@ function updateTypeCounters(eventTypeCounts) {
 function updateExperimentsCounter(count) {
     let ele = window.document.querySelector("#experiments-value");
     ele.textContent = parseInt(ele.textContent) + count;
+}
+
+function updateStreamEventsCounter() {
+    let ele = window.document.querySelector("#streamevent-value");
+    ele.textContent = parseInt(ele.textContent) +1;
 }
 
 function countEventTypes(events) {
@@ -368,6 +423,11 @@ function toggle() {
     } else {
         container.style = "display:none";
     }
+}
 
 
+function debug(msg){
+    extensionGlobals.logEditor.insert("======== DEBUG  START ========\n");
+    extensionGlobals.logEditor.insert(msg);
+    extensionGlobals.logEditor.insert("======== DEBUG  END ========\n");
 }

@@ -1,6 +1,22 @@
 # ld-jssdk-event-viewer
 Launchdarkly JS Client SDK event viewer Chrome extension
-
+## Capabilities
+1. Capture the following events
+    *  flag evaluations
+    *  identity events
+    *  custom events
+    *  click and pageview events
+    *  stream updates
+ 2. Display and validate Conversion Metrics
+    *  show conversion metrics that matches URL and element on the page using the CSS selector specified
+3.  Log payload/details of the following SENT and RECEIVED events:
+    *  flag evaluations
+    *  identity events
+    *  custom events
+    *  click and pageview events
+    *  stream updates
+4. Display Feature flags loaded by the JS client SDK.
+ 
 ## Capture and validate Conversion Metrics
 
 
