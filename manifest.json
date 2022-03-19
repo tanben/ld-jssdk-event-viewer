@@ -1,11 +1,13 @@
 {
     "name": "Launchdpad",
-    "version": "0.2",
-    "manifest_version": 2,
+    "version": "0.3",
+    "manifest_version": 3,
 
     "devtools_page": "devtools.html",
     "permissions": [
-        "<all_urls>",
+        "webRequest",
         "tabs"
-    ]
+    ],
+    "host_permissions": ["<all_urls>"]
+
 }
