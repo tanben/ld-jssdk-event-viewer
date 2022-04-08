@@ -27,6 +27,7 @@ function main() {
     chrome.devtools.network.onRequestFinished.addListener(evalxHandler);
     
     setTimeout(onEventSourceEvents, 5000);
+    
 
     chrome.devtools.network.onNavigated.addListener(onNavHandler);
 }
@@ -76,9 +77,15 @@ function evalxHandler(request) {
 
 
     request.getContent((body) => {
+        if (!body){
+            log(`evalxHandler() body is empty skipping.`);
+            return;
+        }
+
         let bodyObj = JSON.parse(body);
 
-        if (bodyObj.length == 0) {
+        if (bodyObj && bodyObj.length == 0) {
+            log(`evalxHandler() body parsed array is empty skipping.`);
             return;
         }
 
@@ -220,20 +227,26 @@ function goalsHandler(request) {
         return;
     }
     request.getContent((body) => {
-        let bodyObj = JSON.parse(body);
-        let bodyStrfy = JSON.stringify(bodyObj, null, 4);
-
-        if (bodyObj.length == 0) {
+        if (!body){
             return;
         }
-
-        Promise.allSettled([evalInspectPage('window.location.href'),
-                evalInspectPage('window.location.search'),
-                evalInspectPage('window.location.hash')
+        Promise.allSettled([ 
+               evalInspectPage( _=>window.location.href),
+                evalInspectPage( _=>window.location.search),
+                evalInspectPage( _=>window.location.hash)
             ])
             .then((results) => {
                 let [winHref, winSearch, winHash] = results;
-                processGoals(bodyObj, winHref.value[0], winSearch.value[0], winHash.value[0]);
+                // log(`winHref=${JSON.stringify(winHref)}`);
+                // log(`winSearch=${JSON.stringify(winSearch)}`);
+                // log(`winHash=${JSON.stringify(winHash)}`);
+                let href=winHref.value[0].result;
+                let search=winSearch.value[0].result;
+                let hash=winHash.value[0].result;
+                processGoals( JSON.parse(body), href, search, hash);
+            })
+            .catch( err=>{
+                log(`goalsHandler() Error=${err}`);
             })
     });
 
@@ -297,12 +310,13 @@ function processGoals(goals, locationHref, search, hash) {
         updateConversionMetricsTable([]);
         return;
     }
-    let tasks = [];
+    const code = (sel)=>window.document.querySelector(`${sel}`);
+    const tasks = [];
     goals.forEach(({
         selector
     }) => {
-        let code = `window.document.querySelector("${selector}")`;
-        tasks.push(evalInspectPage(code));
+        
+        tasks.push(evalInspectPage(code, selector));
     })
     Promise.allSettled(tasks)
         .then(results => {
@@ -316,13 +330,12 @@ function processGoals(goals, locationHref, search, hash) {
                 } = goals[idx];
                 let matchedUrl = urls.filter(url => doesUrlMatch(url, locationHref, search, hash));
                 let urlMatch = (matchedUrl && matchedUrl.length > 0);
-
                 let entry = {
                     kind,
                     key,
                     selector,
                     urlMatch,
-                    targetMatch: (result.value[0] && result.value[0] != null) ? true : false,
+                    targetMatch: (result.value[0] && result.value[0].result != null) ? true : false,
                     urls
 
                 };
@@ -346,21 +359,20 @@ function logInspectedWindow(msg) {
     )
 }
 
-function evalInspectPage(code) {
+function evalInspectPage(code, params="") {
     return new Promise(resolve => {
-        chrome.tabs.executeScript(chrome.devtools.inspectedWindow.tabId, {
-            code
+        chrome.scripting.executeScript({
+            target:{tabId: chrome.devtools.inspectedWindow.tabId},
+            args:[params], 
+            func:code
         }, function (result) {
-            // log("executeScript: Result Start----");
-            // log(JSON.stringify(code,null,2));
-            // log (JSON.stringify(result));
-            // log("executeScript: Result End----")
-
+            // log(`executeScript: Result=${JSON.stringify(result)}`);
             resolve(result);
 
         });
     })
 }
+
 
 function logNetwork(request) {
     if (!request.request.url.includes("launchdarkly.com")) {
@@ -404,15 +416,12 @@ function logNetwork(request) {
     })
 }
 
-function log(msg) {
-
-    let code = {
-        code: `console.log('${msg}')`
-    };
-    //     chrome.tabs.executeScript(chrome.devtools.inspectedWindow.tabId, code, function(result){
-    //         log(`log: result=${result}`)
-    //     });
-    chrome.tabs.executeScript(chrome.devtools.inspectedWindow.tabId, code);
+function log(message) {
+    chrome.scripting.executeScript({
+        target:{ tabId:chrome.devtools.inspectedWindow.tabId },
+        args:[message],
+        func: (str)=>{console.log(str)}
+    });
 }
 
 function toggle() {
