@@ -65,6 +65,30 @@ function onNavHandler() {
     document.querySelector('.featureflags-details').value = null;
 }
 
+function getUserContext(request){
+    let userObj = {};
+    if (!request || !request.url){
+        return userObj;
+    }
+
+    try{
+        let section= request.url.split("/") ;
+        let userHashQS = section[section.length-1] 
+        if (!userHashQS || userHashQS.length ==0){
+            return userObj;
+        }
+
+        let [userHash, _]=  userHashQS.split("?") ;
+        let userObj = JSON.parse(atob(userHash) );
+        let textArea = document.querySelector('.user-context-details');
+        textArea.value =  JSON.stringify(userObj, null, 4);
+
+    }catch (err){
+        log(`error in getUsercontext() err=${err.message}`)
+    }
+    return userObj;
+    
+}
 function evalxHandler(request) {
 
     if (!request.request.url.includes("launchdarkly.com")) {
@@ -75,8 +99,13 @@ function evalxHandler(request) {
         return;
     }
 
+    if (request.request.method=="GET"){
+        getUserContext(request.request);
+    }
+
 
     request.getContent((body) => {
+
         if (!body){
             log(`evalxHandler() body is empty skipping.`);
             return;
@@ -310,7 +339,9 @@ function processGoals(goals, locationHref, search, hash) {
         updateConversionMetricsTable([]);
         return;
     }
-    const code = (sel)=>window.document.querySelector(`${sel}`);
+    const code = (sel)=>{
+        return (!sel)?null: window.document.querySelector(`${sel}`);
+    };
     const tasks = [];
     goals.forEach(({
         selector
