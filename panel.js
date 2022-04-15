@@ -61,8 +61,7 @@ function onNavHandler() {
     typeCounters.forEach(counter => (counter.textContent = 0));
 
     extensionGlobals.logEditor.setValue("");
-    document.querySelector('.experiments-details').value = null;
-    document.querySelector('.featureflags-details').value = null;
+    document.querySelectorAll('textArea').forEach(e=>e.value=null)
 }
 
 function getUserContext(request){
