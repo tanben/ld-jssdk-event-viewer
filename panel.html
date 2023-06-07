@@ -1,79 +1,83 @@
 <html>
-<head>
+  <head>
     <link rel="stylesheet" href="mystyle.css" />
-    <script src="goalTracker-mod.js"> </script>
+    <script src="goalTracker-mod.js"></script>
     <script src="panel.js" defer></script>
-</head>
-<body>
-
-
-
-    <h3>Counters</h3>
-    <div id="typescounterContainer" class="table">
-        <div class="table-row">
-            <div id="custom" class="table-cell-counter ">
-                <span id="custom-value" class="type-counter large-value">0</span><label class="type-counter">custom
-                    events</label>
-            </div>
-            <div id="identify" class="table-cell-counter">
-                <span id="identify-value" class="type-counter large-value">0</span><label class="type-counter">identify
-                    events</label>
-            </div>
-            <div id="experiments" class="table-cell-counter">
-                <span id="experiments-value" class="type-counter large-value">0</span><label
-                    class="type-counter">experiment events </label>
-            </div>
+  </head>
+  <body>
+    <div id="typescounterContainer" class="types-counter table">
+      <h3>Counters</h3>
+      <div class="table-row">
+        <div id="custom" class="table-cell-counter">
+          <span id="custom-value" class="type-counter large-value">0</span
+          ><label class="type-counter">custom event(s)</label>
         </div>
-        <div class="table-row">
-            <div id="click" class="table-cell-counter">
-                <span id="click-value" class="type-counter large-value">0</span><label class="type-counter">click events
-                </label>
-            </div>
-            <div id="feature" class="table-cell-counter">
-                <span id="feature-value" class="type-counter large-value">0</span><label class="type-counter">flag
-                    evaluations</label>
-            </div>
-            <div id="feature" class="table-cell-counter">
-                <span id="streamevent-value" class="type-counter large-value">0</span><label class="type-counter">stream events</label>
-            </div>
+        <div id="identify" class="table-cell-counter">
+          <span id="identify-value" class="type-counter large-value">0</span
+          ><label class="type-counter">identify event(s)</label>
         </div>
+        <div id="experiments" class="table-cell-counter">
+          <span id="experiments-value" class="type-counter large-value">0</span
+          ><label class="type-counter">experiment(s) </label>
+        </div>
+      </div>
+      <div class="table-row">
+        <div id="click" class="table-cell-counter">
+          <span id="click-value" class="type-counter large-value">0</span
+          ><label class="type-counter">click event(s) </label>
+        </div>
+        <div id="feature" class="table-cell-counter">
+          <span id="feature-value" class="type-counter large-value">0</span
+          ><label class="type-counter">flag eval(s)</label>
+        </div>
+
+        <div id="feature" class="table-cell-counter">
+          <span id="streamConnection-value" class="type-counter large-value"
+            >0</span
+          ><label class="type-counter">stream connection(s)</label>
+        </div>
+        <div id="feature" class="table-cell-counter">
+          <span id="streamevent-value" class="type-counter large-value">0</span
+          ><label class="type-counter">stream event(s)</label>
+        </div>
+      </div>
     </div>
     <h3>Conversion Metrics</h3>
     <div id="conversionMetricsContainer" class="table">
-        <div id="containerHeader" class="table-row">
-            <div class="table-head"><span>Enabled</span></div>
-            <div class="table-head"><span>Kind</span></div>
-            <div class="table-head"><span>Goal Key</span></div>
-            <div class="table-head"><span>URL Match</span></div>
-            <div class="table-head"><span>Target Match</span></div>
-        </div>
-        <div class="table-row metric">
-            <div class="table-cell">---</div>
-            <div class="table-cell">---</div>
-            <div class="table-cell">---</div>
-            <div class="table-cell">---</div>
-            <div class="table-cell">---</div>
-        </div>
+      <div id="containerHeader" class="table-row">
+        <div class="table-head"><span>Enabled</span></div>
+        <div class="table-head"><span>Kind</span></div>
+        <div class="table-head"><span>Goal Key</span></div>
+        <div class="table-head"><span>URL Match</span></div>
+        <div class="table-head"><span>Target Match</span></div>
+      </div>
+      <div class="table-row metric">
+        <div class="table-cell">---</div>
+        <div class="table-cell">---</div>
+        <div class="table-cell">---</div>
+        <div class="table-cell">---</div>
+        <div class="table-cell">---</div>
+      </div>
     </div>
-    <div id="userContextContainer">
-        <h3>User Context</h3>
-        <textarea class="user-context-details">
-        </textarea>
-    </div>
-    <div id="experimentGoals">
-        <h3>Experiment Goals</h3>
-        <textarea class="experiments-details">
-        </textarea>
-    </div>
-    <div id="featureFlagsContainer">
+    <div id="detailsContainer" class="details-container">
+      <div id="userContextContainer">
+        <h3>Context</h3>
+        <textarea class="user-context-details"> </textarea>
+      </div>
+
+      <div id="featureFlagsContainer">
         <h3>Feature Flags</h3>
         <textarea class="featureflags-details"></textarea>
-    </div>
-    <div id="networkDetailsContainer">
-        <h3> Events</h3>
+      </div>
+
+      <div id="networkDetailsContainer">
+        <h3>Events</h3>
         <textarea id="networkDetails" class="network-details"></textarea>
+      </div>
+      <div id="experimentGoals">
+        <h3>Experiment Goals</h3>
+        <textarea class="experiments-details"> </textarea>
+      </div>
     </div>
-
-</body>
-
+  </body>
 </html>

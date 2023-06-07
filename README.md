@@ -1,4 +1,4 @@
-# ld-jssdk-event-viewer
+# LaunchDarkly Javascript SDK Event Viewer
 Launchdarkly JS Client SDK event viewer Chrome extension
 ## Capabilities
 1. Capture the following events

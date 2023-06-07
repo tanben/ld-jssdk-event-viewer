@@ -31,7 +31,7 @@
 .table-head {
     border: 1px solid #999999;
     float: left;
-    height: 50px;
+    height: 15px;
     overflow: hidden;
     padding: 2px 1.8%;
     width: 14%;
@@ -41,10 +41,10 @@
 }
 .table-cell-counter {
     float: left;
-    height: 50px;
-    overflow: hidden;
+    height: 55px;
+    overflow: auto;
     padding: 2px 1.8%;
-    width: 14%;
+    width: 120px;
 
 }
 
@@ -100,7 +100,7 @@ textarea {
     overflow: scroll;
     resize: none;
     white-space: pre-line;
-    height: 30%;
+    height: 160px;
     display: block;
     border: 1px solid #999999;
     padding: 3px 1.8%;
@@ -112,5 +112,17 @@ label.type-counter {
 }
 
 .large-value {
-    font-size: 3rem;
+    font-size: 2rem;
+}
+
+.details-container{
+    margin-top:15px;
+    height: 45%;
+    overflow: auto;
+    border: solid 1px#b9b6b6;
+    padding: 10px;
+}
+
+.types-counter{
+    margin-top:15px;
 }
