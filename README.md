@@ -1,6 +1,8 @@
 # LaunchDarkly Javascript SDK Event Viewer
-Launchdarkly JS Client SDK event viewer Chrome extension
-## Capabilities
+
+The LaunchDarkly JavaScript SDK Event Viewer is a Chrome extension designed to capture, display, and validate various events and data related to the LaunchDarkly JavaScript Client SDK. This tool is particularly useful for developers and QA teams who want to monitor and debug their LaunchDarkly implementations.
+
+### Features
 1. Capture the following events
     *  flag evaluations
     *  identity events
@@ -16,20 +18,31 @@ Launchdarkly JS Client SDK event viewer Chrome extension
     *  click and pageview events
     *  stream updates
 4. Display Feature flags loaded by the JS client SDK.
+
+## Installation
+1. Clone this repository to your local machine:
+```
+git clone https://github.com/tanben/ld-jssdk-event-viewer.git
+
+```
+
+2. Open Google Chrome and navigate to chrome://extensions/.
+3. Enable "Developer mode" using the toggle in the top right corner.
+4. Click on "Load unpacked" and select the directory where you cloned the repository.
+5. The LaunchDarkly JavaScript SDK Event Viewer extension should now be loaded and visible in your Chrome extensions list.
+
  
-## Capture and validate Conversion Metrics
+## Usage
+
+1. Navigate to the web page where you want to monitor LaunchDarkly events.
+2. Open the Chrome Developer Tools (right-click anywhere on the page, select "Inspect" or use the keyboard shortcut `Ctrl+Shift+I` on Windows/Linux or `Cmd+Option+I` on Mac).
+3. Select the **"Launchpad"** tab in the Developer Tools.
+4. Reload your web page to start capturing events.
+5. Interact with your web page as needed, and the Launchpad tab will display the captured events, Conversion Metrics, Feature Flags, and other relevant data.
 
 
 ![img](img/screen2.jpg)
-## Capture Goals, Feature Flags and Events
+*View Experimentation metrics and events*
+
 ![img](img/screen3.jpg)
-
-# Installation
-1. Clone [this](https://github.com/tanben/ld-jssdk-event-viewer) repo and follow the instruction [here](https://developer.chrome.com/docs/extensions/mv3/getstarted/#unpacked) on loading an unpacked  Chrome extension.
-
-2. Navigate to your page and [Open the Chrome dev-tools](https://launchdarkly.atlassian.net/wiki/spaces/~591637646/pages/edit-v2/2025359513#). 
-
-3. Select **Launchpad** from the tab list.
-4. Reload your page.
-
-
+*View feature flags, context and SDK events*
