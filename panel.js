@@ -18,29 +18,30 @@ main();
 //------------
 
 function main() {
+  chrome.devtools.network.onRequestFinished.addListener(onEventSourceEvents);
+  chrome.devtools.network.onRequestFinished.addListener(evalxHandler);
+
   chrome.devtools.network.onRequestFinished.addListener(goalsHandler);
   chrome.devtools.network.onRequestFinished.addListener(logNetwork);
   chrome.devtools.network.onRequestFinished.addListener(eventsHandler);
-  chrome.devtools.network.onRequestFinished.addListener(evalxHandler);
   chrome.devtools.network.onNavigated.addListener(onNavHandler);
-  chrome.devtools.network.onRequestFinished.addListener(onEventSourceEvents);
 }
 
 function onEventSourceEvents(handler) {
   chrome.devtools.network.getHAR(function (events) {
-    if (!events || (events.entries && events.entries.length == 0)) {
+    if (events?.entries && events?.entries.length == 0){
       return;
     }
 
     let eventSources = events.entries.filter(
       ({ _resourceType, request }) =>
         _resourceType === "eventsource" &&
-        request.url.includes("clientstream.launchdarkly.com") &&
+        request.url.includes("clientstream") &&
         !extensionGlobals.eventSource.includes(
           parseContextHashFromUrl(request.url)
         )
     );
-    // log(`eventSources leng=${eventSources.length}`);
+    
 
     eventSources.forEach((eventSource) => {
       const { request } = eventSource;
@@ -63,7 +64,8 @@ function onNavHandler() {
 }
 function parseClientIDFromUrl(url) {
   let section = url.split("/");
-  return section[section.length - 2];
+  section.splice(1,1); 
+  return section[section.length - 3];
 }
 
 function parseContextHashFromUrl(url) {
@@ -97,10 +99,37 @@ function updateUserContextDetails(request) {
   textArea.value +=
     (textArea.value && textArea.value.length > 0 ? "," : "") +
     JSON.stringify(userObj, null, 4);
+
+  let clientID= parseClientIDFromUrl(request.url);
+  let clientIDValue = document.querySelector("#clientIDValue");
+  clientIDValue.textContent = `Client-side ID: ${clientID}`;
+
   return userObj;
 }
+function getFlagsInExperiment(flagJSON){
+  let flags={};
+
+  if (!flagJSON){
+    return data;
+  }
+
+  for (key in flagJSON){
+      let value =  flagJSON[key];
+      if (!value?.reason){
+          continue
+      }
+
+      if (value.reason?.inExperiment == true){
+        flags[key]= value;
+      }
+      
+  }
+
+  return flags;
+}
 function evalxHandler(request) {
-  if (!request.request.url.includes("launchdarkly.com")) {
+  
+  if (!request.request.url.includes("app.launchdarkly.com")) {
     return;
   }
 
@@ -131,6 +160,7 @@ function evalxHandler(request) {
 
     let bodyObj = JSON.parse(body);
 
+    
     if (bodyObj && bodyObj.length == 0) {
       log(`evalxHandler() body parsed array is empty skipping.`);
       return;
@@ -142,6 +172,15 @@ function evalxHandler(request) {
       } bytes , flags=${Object.keys(bodyObj).length}`
     );
 
+    let flagsInExperimentData = getFlagsInExperiment(bodyObj);
+    let flagsInExperimentCount= Object.keys(flagsInExperimentData).length;
+    updateExperimentsCounter(flagsInExperimentCount);
+    if (flagsInExperimentCount >0){
+      document.getElementById('flagsInExperiment').style.display='block';
+
+      updateFlagInExperimentTable(flagsInExperimentData);
+    }
+    
     let ffTextArea = document.querySelector(".featureflags-details");
     ffTextArea.value = ffTextArea.value || "";
 
@@ -214,15 +253,11 @@ function eventStreamHandler(request) {
 }
 
 function eventsHandler(request) {
-  if (!request.request.url.includes("launchdarkly.com")) {
+  if (!request.request.url.includes("launchdarkly.com") ||  request.request.method !== "POST") {
     return;
   }
 
-  if (
-    !request.request.url.includes("/events/bulk/") ||
-    (request.request.url.includes("/events/bulk/") &&
-      request.request.method !== "POST")
-  ) {
+  if (!request.request.url.includes("/events/bulk") ) {
     return;
   }
 
@@ -230,7 +265,7 @@ function eventsHandler(request) {
   extensionGlobals.logEditor.insert("\n");
   extensionGlobals.logEditor.insert("======== SENT EVENT START ========\n");
   extensionGlobals.logEditor.insert(
-    `${request.request.method} url[${request.request.url}]`
+    `${request?.request?.method} url[${request?.request?.url}]`
   );
   extensionGlobals.logEditor.insert("\n");
   extensionGlobals.logEditor.insert(JSON.stringify(events));
@@ -252,12 +287,14 @@ function updateTypeCounters(eventTypeCounts) {
     ele.textContent = parseInt(ele.textContent) + eventTypeCounts[key];
   });
 }
-
+function updateExperimentGoalsCounter(count) {
+  let ele = window.document.querySelector("#experiments-goal-value");
+  ele.textContent = parseInt(ele.textContent) + count;
+}
 function updateExperimentsCounter(count) {
   let ele = window.document.querySelector("#experiments-value");
   ele.textContent = parseInt(ele.textContent) + count;
 }
-
 function updateStreamEventsCounter() {
   let ele = window.document.querySelector("#streamevent-value");
   ele.textContent = parseInt(ele.textContent) + 1;
@@ -398,6 +435,39 @@ function updateConversionMetricsTable(goals) {
   containerHeaderEle.appendChild(rowDiv);
 }
 
+
+
+function updateFlagInExperimentTable(flags) {
+  if (!flags || (flags && Object.keys(flags).length == 0)) {
+    return;
+  }
+
+
+  const rowDiv = document.createElement("div");
+  rowDiv.className = "table-row metric";
+  
+
+  for (let key in flags){
+    let {value, reason} = flags[key];
+    let data={key,  kind:flags[key].reason.kind, value:flags[key].value};
+    
+    for (let key in  data){
+      let cell = document.createElement("div");
+      cell.className = "table-cell";
+      cell.textContent = data[key];
+      rowDiv.appendChild(cell);
+    }
+    
+  }
+
+  let containerHeaderEle = document.querySelector(
+    "#flagsInExperimentContainer > div.table-row"
+  );
+  containerHeaderEle.appendChild(rowDiv);
+}
+
+
+
 function processGoals(goals, locationHref, search, hash) {
   if (goals.length == 0) {
     updateConversionMetricsTable([]);
@@ -430,12 +500,24 @@ function processGoals(goals, locationHref, search, hash) {
       entry.targetMatch = entry.kind === "pageview" ? "N/A" : entry.targetMatch;
       collection.push(entry);
     });
+    if (collection.length > 0){
+      let element = document.getElementById('conversionMetrics');
+      if (element) {
+        element.style.display = 'block';
+      }
+
+      element = document.getElementById('experimentGoals');
+      if (element) {
+        element.style.display = 'block';
+      }
+    }
     updateConversionMetricsTable(collection);
     let enabledExperiments = collection.filter(
       ({ urlMatch, targetMatch }) =>
         urlMatch == true && (targetMatch == true || targetMatch == "N/A")
     );
-    updateExperimentsCounter(enabledExperiments.length);
+    updateExperimentGoalsCounter(enabledExperiments.length);
+    
   });
 }
 

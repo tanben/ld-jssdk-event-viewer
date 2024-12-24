@@ -1,7 +1,7 @@
 .table {
     padding-bottom: 25px;
     display: block;
-    width: 100%;
+    /* width: 100%; */
 }
 
 .table-heading,
@@ -34,9 +34,8 @@
     height: 15px;
     overflow: hidden;
     padding: 2px 1.8%;
-    width: 14%;
+    width: 15%;
     justify-content: center;
-    display: flex;
     align-items: center;
 }
 .table-cell-counter {
@@ -44,7 +43,7 @@
     height: 55px;
     overflow: auto;
     padding: 2px 1.8%;
-    width: 120px;
+    width: 125px;
 
 }
 
@@ -58,12 +57,6 @@
 }
 
 /************/
-
-
-.big-container {
-    height: 55%;
-    width: 100%;
-}
 
 .folds-control {
     padding-left: 6px;
@@ -100,11 +93,11 @@ textarea {
     overflow: scroll;
     resize: none;
     white-space: pre-line;
-    height: 160px;
-    display: block;
+    height: 25%;
+    overflow-y: scroll;
     border: 1px solid #999999;
     padding: 3px 1.8%;
-    width: 85%;
+    width: 90%;
 }
 
 label.type-counter {
@@ -117,8 +110,8 @@ label.type-counter {
 
 .details-container{
     margin-top:15px;
-    height: 45%;
-    overflow: auto;
+    height: 100%;
+    overflow: scroll;
     border: solid 1px#b9b6b6;
     padding: 10px;
 }
@@ -126,3 +119,12 @@ label.type-counter {
 .types-counter{
     margin-top:15px;
 }
+
+.sticky-div {
+    position: sticky;
+    top: 0;
+    background-color: #f0f0f0; 
+    padding: 20px;
+    border: 1px solid #ccc;
+    z-index: 10; 
+  }

@@ -5,7 +5,10 @@
     <script src="panel.js" defer></script>
   </head>
   <body>
-    <div id="typescounterContainer" class="types-counter table">
+    <h1>Javascript SDK Event Viewer</h1>
+    <div id="typescounterContainer" class="types-counter table sticky-div">
+      <h3 id="clientIDValue"> </h3>
+
       <h3>Counters</h3>
       <div class="table-row">
         <div id="custom" class="table-cell-counter">
@@ -16,9 +19,13 @@
           <span id="identify-value" class="type-counter large-value">0</span
           ><label class="type-counter">identify event(s)</label>
         </div>
-        <div id="experiments" class="table-cell-counter">
+        <div id="in-experiments" class="table-cell-counter">
           <span id="experiments-value" class="type-counter large-value">0</span
-          ><label class="type-counter">experiment(s) </label>
+          ><label class="type-counter">Flag in Experiment </label>
+        </div>
+        <div id="experiments" class="table-cell-counter">
+          <span id="experiments-goal-value" class="type-counter large-value">0</span
+          ><label class="type-counter">Goal Matched </label>
         </div>
       </div>
       <div class="table-row">
@@ -42,21 +49,39 @@
         </div>
       </div>
     </div>
+
+    <div id="conversionMetrics" style="display:none">
     <h3>Conversion Metrics</h3>
-    <div id="conversionMetricsContainer" class="table">
-      <div id="containerHeader" class="table-row">
-        <div class="table-head"><span>Enabled</span></div>
-        <div class="table-head"><span>Kind</span></div>
-        <div class="table-head"><span>Goal Key</span></div>
-        <div class="table-head"><span>URL Match</span></div>
-        <div class="table-head"><span>Target Match</span></div>
+      <div id="conversionMetricsContainer" class="table">
+        <div id="containerHeader" class="table-row">
+          <div class="table-head"><span>Enabled</span></div>
+          <div class="table-head"><span>Kind</span></div>
+          <div class="table-head"><span>Goal Key</span></div>
+          <div class="table-head"><span>URL Match</span></div>
+          <div class="table-head"><span>Target Match</span></div>
+        </div>
+        <div class="table-row metric">
+          <div class="table-cell">---</div>
+          <div class="table-cell">---</div>
+          <div class="table-cell">---</div>
+          <div class="table-cell">---</div>
+          <div class="table-cell">---</div>
+        </div>
       </div>
-      <div class="table-row metric">
-        <div class="table-cell">---</div>
-        <div class="table-cell">---</div>
-        <div class="table-cell">---</div>
-        <div class="table-cell">---</div>
-        <div class="table-cell">---</div>
+    </div>
+    <div id="flagsInExperiment" style="display:none">
+      <h3>Flags in Experiment</h3>
+      <div id="flagsInExperimentContainer" class="table">
+        <div id="containerHeader" class="table-row">
+          <div class="table-head"><span>Flag</span></div>
+          <div class="table-head"><span>Kind</span></div>
+          <div class="table-head"><span>Value</span></div>
+        </div>
+        <div class="table-row metric">
+          <div class="table-cell">---</div>
+          <div class="table-cell">---</div>
+          <div class="table-cell">---</div>
+        </div>
       </div>
     </div>
     <div id="detailsContainer" class="details-container">
@@ -74,7 +99,7 @@
         <h3>Events</h3>
         <textarea id="networkDetails" class="network-details"></textarea>
       </div>
-      <div id="experimentGoals">
+      <div id="experimentGoals" style="display:none">
         <h3>Experiment Goals</h3>
         <textarea class="experiments-details"> </textarea>
       </div>
