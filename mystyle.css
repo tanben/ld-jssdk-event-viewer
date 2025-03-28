@@ -128,3 +128,17 @@ label.type-counter {
     border: 1px solid #ccc;
     z-index: 10; 
   }
+
+.dnt-banner {
+    padding: 10px;
+    text-align: center;
+    font-weight: bold;
+    width: 100%;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    background-color: #4CAF50;
+    color: white;
+}

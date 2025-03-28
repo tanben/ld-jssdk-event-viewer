@@ -10,7 +10,7 @@ var extensionGlobals = {
       ele.value = msg;
     },
   },
-  eventSource: [],
+  eventSource: []
 };
 
 main();
@@ -25,6 +25,43 @@ function main() {
   chrome.devtools.network.onRequestFinished.addListener(logNetwork);
   chrome.devtools.network.onRequestFinished.addListener(eventsHandler);
   chrome.devtools.network.onNavigated.addListener(onNavHandler);
+  
+  checkDoNotTrack();
+}
+
+function checkDoNotTrack() {
+  chrome.scripting.executeScript(
+    {
+      target: { tabId: chrome.devtools.inspectedWindow.tabId },
+      func: () => {
+        return {
+          doNotTrack: navigator.doNotTrack === "1" || 
+                     navigator.doNotTrack === "yes" || 
+                     navigator.msDoNotTrack === "1" || 
+                     window.doNotTrack === "1"
+        };
+      },
+    },
+    (result) => {
+      if (result && result[0]) {
+        const dntStatus = result[0].result.doNotTrack;
+        const dntBanner = document.createElement('div');
+        dntBanner.className = 'dnt-banner';
+        dntBanner.textContent = dntStatus ? 
+          'Do Not Track(DNT) is enabled in this browser.' : 
+          'Do Not Track(DNT) is NOT enabled in this browser.';
+        
+        // Set different colors based on DNT status
+        if (dntStatus) {
+          dntBanner.style.backgroundColor = '#f44336'; // Red for enabled
+        } else {
+          dntBanner.style.backgroundColor = '#4CAF50'; // Green for disabled
+        }
+        
+        document.body.insertBefore(dntBanner, document.body.firstChild);
+      }
+    }
+  );
 }
 
 function onEventSourceEvents(handler) {
@@ -144,6 +181,7 @@ function evalxHandler(request) {
   if (request.request.method == "GET") {
     updateUserContextDetails(request.request);
   }
+  
   // http://www.softwareishard.com/blog/har-12-spec/#request
   // https://metacpan.org/pod/Archive::Har::Entry::Timings
   log(
@@ -173,11 +211,11 @@ function evalxHandler(request) {
     );
 
     let flagsInExperimentData = getFlagsInExperiment(bodyObj);
-    let flagsInExperimentCount= Object.keys(flagsInExperimentData).length;
+    let flagsInExperimentCount = Object.keys(flagsInExperimentData).length;
+    
     updateExperimentsCounter(flagsInExperimentCount);
-    if (flagsInExperimentCount >0){
-      document.getElementById('flagsInExperiment').style.display='block';
-
+    if (flagsInExperimentCount > 0) {
+      document.getElementById('flagsInExperiment').style.display = 'block';
       updateFlagInExperimentTable(flagsInExperimentData);
     }
     
@@ -262,6 +300,7 @@ function eventsHandler(request) {
   }
 
   let events = JSON.parse(request.request.postData.text);
+  
   extensionGlobals.logEditor.insert("\n");
   extensionGlobals.logEditor.insert("======== SENT EVENT START ========\n");
   extensionGlobals.logEditor.insert(
@@ -473,6 +512,7 @@ function processGoals(goals, locationHref, search, hash) {
     updateConversionMetricsTable([]);
     return;
   }
+  
   const code = (sel) => {
     return !sel ? null : window.document.querySelector(`${sel}`);
   };
@@ -512,17 +552,23 @@ function processGoals(goals, locationHref, search, hash) {
       }
     }
     updateConversionMetricsTable(collection);
+    
     let enabledExperiments = collection.filter(
       ({ urlMatch, targetMatch }) =>
         urlMatch == true && (targetMatch == true || targetMatch == "N/A")
     );
     updateExperimentGoalsCounter(enabledExperiments.length);
-    
   });
 }
 
 function logInspectedWindow(msg) {
-  chrome.devtools.inspectedWindow.eval(`console.log('${msg}');`);
+  chrome.scripting.executeScript({
+    target: { tabId: chrome.devtools.inspectedWindow.tabId },
+    args: [msg],
+    func: (str) => {
+      console.log(str);
+    },
+  });
 }
 
 function evalInspectPage(code, params = "") {
