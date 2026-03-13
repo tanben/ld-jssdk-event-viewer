@@ -1,18 +1,14 @@
 {
     "name": "LaunchDarkly SDK Event Viewer",
-    "version": "0.4",
+    "version": "1.0.0",
     "manifest_version": 3,
     "description": "A Chrome extension for viewing LaunchDarkly SDK events and feature flags.",
     "author": "Benedicto Tan",
     "devtools_page": "devtools.html",
-    "action": {
-        "default_title": "LaunchDarkly SDK Event Viewer"
-    },
     "permissions": [
         "webRequest",
         "tabs",
         "scripting"
     ],
-    "host_permissions": ["<all_urls>"],
-    "icons": {}
+    "host_permissions": ["<all_urls>"]
 }

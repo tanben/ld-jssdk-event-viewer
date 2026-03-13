@@ -1,107 +1,247 @@
 <html>
   <head>
+    <meta charset="UTF-8">
     <link rel="stylesheet" href="mystyle.css" />
     <script src="goalTracker-mod.js"></script>
     <script src="panel.js" defer></script>
   </head>
   <body>
+    <!-- Toast container -->
+    <div id="toast-container"></div>
+    
     <h1>Javascript SDK Event Viewer</h1>
-    <div id="typescounterContainer" class="types-counter table sticky-div">
-      <h3 id="clientIDValue"> </h3>
-
-      <h3>Counters</h3>
+    <div class="action-buttons">
+      <button id="clearBtn" class="action-btn clear-btn">Clear All</button>
+      <button id="exportBtn" class="action-btn export-btn">Export Data</button>
+    </div>
+    <div id="typescounterContainer" class="types-counter sticky-div">
+      <h3 id="clientIDValue"></h3>
+      <h3 class="counters-title">Counters</h3>
       <div class="table-row">
         <div id="custom" class="table-cell-counter">
-          <span id="custom-value" class="type-counter large-value">0</span
-          ><label class="type-counter">custom event(s)</label>
+          <span id="custom-value" class="type-counter large-value">0</span>
+          <label class="type-counter">Custom Events</label>
         </div>
         <div id="identify" class="table-cell-counter">
-          <span id="identify-value" class="type-counter large-value">0</span
-          ><label class="type-counter">identify event(s)</label>
+          <span id="identify-value" class="type-counter large-value">0</span>
+          <label class="type-counter">Identify Events</label>
         </div>
         <div id="in-experiments" class="table-cell-counter">
-          <span id="experiments-value" class="type-counter large-value">0</span
-          ><label class="type-counter">Flag in Experiment </label>
+          <span id="experiments-value" class="type-counter large-value">0</span>
+          <label class="type-counter">Flags in Experiment</label>
         </div>
         <div id="experiments" class="table-cell-counter">
-          <span id="experiments-goal-value" class="type-counter large-value">0</span
-          ><label class="type-counter">Goal Matched </label>
+          <span id="experiments-goal-value" class="type-counter large-value">0</span>
+          <label class="type-counter">Goals Matched</label>
         </div>
       </div>
       <div class="table-row">
         <div id="click" class="table-cell-counter">
-          <span id="click-value" class="type-counter large-value">0</span
-          ><label class="type-counter">click event(s) </label>
+          <span id="click-value" class="type-counter large-value">0</span>
+          <label class="type-counter">Click Events</label>
         </div>
         <div id="feature" class="table-cell-counter">
-          <span id="feature-value" class="type-counter large-value">0</span
-          ><label class="type-counter">flag eval(s)</label>
+          <span id="feature-value" class="type-counter large-value">0</span>
+          <label class="type-counter">Flag Evaluations</label>
         </div>
-
-        <div id="feature" class="table-cell-counter">
-          <span id="streamConnection-value" class="type-counter large-value"
-            >0</span
-          ><label class="type-counter">stream connection(s)</label>
+        <div id="stream-connection" class="table-cell-counter">
+          <span id="streamConnection-value" class="type-counter large-value">0</span>
+          <label class="type-counter">Active Streams</label>
         </div>
-        <div id="feature" class="table-cell-counter">
-          <span id="streamevent-value" class="type-counter large-value">0</span
-          ><label class="type-counter">stream event(s)</label>
+        <div id="stream-event" class="table-cell-counter">
+          <span id="streamevent-value" class="type-counter large-value">0</span>
+          <label class="type-counter">Stream Events</label>
         </div>
       </div>
     </div>
 
-    <div id="conversionMetrics" style="display:none">
-    <h3>Conversion Metrics</h3>
-      <div id="conversionMetricsContainer" class="table">
-        <div id="containerHeader" class="table-row">
-          <div class="table-head"><span>Enabled</span></div>
-          <div class="table-head"><span>Kind</span></div>
-          <div class="table-head"><span>Goal Key</span></div>
-          <div class="table-head"><span>URL Match</span></div>
-          <div class="table-head"><span>Target Match</span></div>
-        </div>
-        <div class="table-row metric">
-          <div class="table-cell">---</div>
-          <div class="table-cell">---</div>
-          <div class="table-cell">---</div>
-          <div class="table-cell">---</div>
-          <div class="table-cell">---</div>
-        </div>
-      </div>
-    </div>
-    <div id="flagsInExperiment" style="display:none">
-      <h3>Flags in Experiment</h3>
-      <div id="flagsInExperimentContainer" class="table">
-        <div id="containerHeader" class="table-row">
-          <div class="table-head"><span>Flag</span></div>
-          <div class="table-head"><span>Kind</span></div>
-          <div class="table-head"><span>Value</span></div>
-        </div>
-        <div class="table-row metric">
-          <div class="table-cell">---</div>
-          <div class="table-cell">---</div>
-          <div class="table-cell">---</div>
-        </div>
-      </div>
-    </div>
     <div id="detailsContainer" class="details-container">
-      <div id="userContextContainer">
-        <h3>Context</h3>
-        <textarea class="user-context-details"> </textarea>
+      <!-- Conversion Metrics Section -->
+      <div id="conversionMetricsSection" class="collapsible-section" style="display:none">
+        <div class="section-header" data-target="conversionMetricsContent">
+          <span class="collapse-icon"></span>
+          <h3>Conversion Metrics</h3>
+          <div class="view-toggle">
+            <button class="toggle-btn active" data-view="formatted" data-container="conversionMetrics">Formatted</button>
+            <button class="toggle-btn" data-view="raw" data-container="conversionMetrics">Raw</button>
+          </div>
+          <button class="copy-btn" data-copy-target="#conversionMetricsRaw" title="Copy to clipboard">Copy</button>
+        </div>
+        <div id="conversionMetricsContent" class="section-content">
+          <div class="empty-state" id="conversionMetricsEmptyState">Waiting for conversion metrics...</div>
+          
+          <!-- Raw View -->
+          <div id="conversionMetricsRawView" class="view-panel" style="display: none;">
+            <textarea id="conversionMetricsRaw" class="json-display"></textarea>
+          </div>
+          
+          <!-- Formatted View -->
+          <div id="conversionMetricsFormattedView" class="view-panel" style="display: none;">
+            <div id="conversionMetricsTable" class="data-table">
+              <div class="data-table-header">
+                <div class="data-table-cell">Status</div>
+                <div class="data-table-cell">Kind</div>
+                <div class="data-table-cell">Goal Key</div>
+                <div class="data-table-cell">URL Match</div>
+                <div class="data-table-cell">Target Match</div>
+              </div>
+              <div id="conversionMetricsTableBody" class="data-table-body">
+                <!-- Rows will be inserted here -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Flags in Experiment Section -->
+      <div id="flagsInExperimentSection" class="collapsible-section" style="display:none">
+        <div class="section-header" data-target="flagsInExperimentContent">
+          <span class="collapse-icon"></span>
+          <h3>Flags in Experiment</h3>
+          <div class="view-toggle">
+            <button class="toggle-btn active" data-view="formatted" data-container="flagsInExperiment">Formatted</button>
+            <button class="toggle-btn" data-view="raw" data-container="flagsInExperiment">Raw</button>
+          </div>
+          <button class="copy-btn" data-copy-target="#flagsInExperimentRaw" title="Copy to clipboard">Copy</button>
+        </div>
+        <div id="flagsInExperimentContent" class="section-content">
+          <div class="empty-state" id="flagsInExperimentEmptyState">Waiting for flags in experiment...</div>
+          
+          <!-- Raw View -->
+          <div id="flagsInExperimentRawView" class="view-panel" style="display: none;">
+            <textarea id="flagsInExperimentRaw" class="json-display"></textarea>
+          </div>
+          
+          <!-- Formatted View -->
+          <div id="flagsInExperimentFormattedView" class="view-panel" style="display: none;">
+            <div id="flagsInExperimentTable" class="data-table">
+              <div class="data-table-header">
+                <div class="data-table-cell">Flag Key</div>
+                <div class="data-table-cell">Value</div>
+                <div class="data-table-cell">Reason</div>
+                <div class="data-table-cell">Variation</div>
+              </div>
+              <div id="flagsInExperimentTableBody" class="data-table-body">
+                <!-- Rows will be inserted here -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Context Section -->
+      <div id="userContextContainer" class="collapsible-section">
+        <div class="section-header" data-target="contextContent">
+          <span class="collapse-icon"></span>
+          <h3>Context</h3>
+          <div class="view-toggle">
+            <button class="toggle-btn active" data-view="formatted" data-container="context">Formatted</button>
+            <button class="toggle-btn" data-view="raw" data-container="context">Raw</button>
+          </div>
+          <button class="copy-btn" data-copy-target=".user-context-details" title="Copy to clipboard">Copy</button>
+        </div>
+        <div id="contextContent" class="section-content">
+          <div class="empty-state" id="contextEmptyState" data-for=".user-context-details">Waiting for LaunchDarkly context data...</div>
+          
+          <!-- Raw View -->
+          <div id="contextRawView" class="view-panel" style="display: none;">
+            <textarea class="user-context-details json-display"></textarea>
+          </div>
+          
+          <!-- Formatted View -->
+          <div id="contextFormattedView" class="view-panel" style="display: none;">
+            <div id="contextTableContainer">
+              <!-- Context groups will be inserted here -->
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div id="featureFlagsContainer">
-        <h3>Feature Flags</h3>
-        <textarea class="featureflags-details"></textarea>
+      <!-- Feature Flags Section -->
+      <div id="featureFlagsContainer" class="collapsible-section">
+        <div class="section-header" data-target="flagsContent">
+          <span class="collapse-icon"></span>
+          <h3>Feature Flags <span id="featureFlagsCount" class="section-count" data-count="0"></span></h3>
+          <div class="view-toggle">
+            <button class="toggle-btn active" data-view="formatted" data-container="flags">Formatted</button>
+            <button class="toggle-btn" data-view="raw" data-container="flags">Raw</button>
+          </div>
+          <button class="copy-btn" data-copy-target=".featureflags-details" title="Copy to clipboard">Copy</button>
+        </div>
+        <div id="flagsContent" class="section-content">
+          <div class="empty-state" id="flagsEmptyState" data-for=".featureflags-details">Waiting for feature flag evaluations...</div>
+          
+          <!-- Raw View -->
+          <div id="flagsRawView" class="view-panel" style="display: none;">
+            <textarea class="featureflags-details json-display"></textarea>
+          </div>
+          
+          <!-- Formatted View -->
+          <div id="flagsFormattedView" class="view-panel" style="display: none;">
+            <div id="featureFlagsTable" class="data-table">
+              <div class="data-table-header">
+                <div class="data-table-cell">Flag Key</div>
+                <div class="data-table-cell">Value</div>
+                <div class="data-table-cell">Reason</div>
+              </div>
+              <div id="featureFlagsTableBody" class="data-table-body">
+                <!-- Rows will be inserted here -->
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div id="networkDetailsContainer">
-        <h3>Events</h3>
-        <textarea id="networkDetails" class="network-details"></textarea>
+      <!-- Events Section -->
+      <div id="networkDetailsContainer" class="collapsible-section">
+        <div class="section-header" data-target="eventsContent">
+          <span class="collapse-icon"></span>
+          <h3>Events</h3>
+          <div class="view-toggle">
+            <button class="toggle-btn active" data-view="formatted" data-container="events">Formatted</button>
+            <button class="toggle-btn" data-view="raw" data-container="events">Raw</button>
+          </div>
+          <button class="copy-btn" data-copy-target="#networkDetails" title="Copy to clipboard">Copy</button>
+        </div>
+        <div id="eventsContent" class="section-content">
+          <div class="empty-state" id="eventsEmptyState" data-for="#networkDetails">Waiting for SDK events...</div>
+          
+          <!-- Raw View -->
+          <div id="eventsRawView" class="view-panel" style="display: none;">
+            <textarea id="networkDetails" class="network-details"></textarea>
+          </div>
+          
+          <!-- Formatted View -->
+          <div id="eventsFormattedView" class="view-panel" style="display: none;">
+            <!-- Filter Buttons -->
+            <div class="event-filters">
+              <button class="filter-btn active" data-filter="all">All <span class="filter-count" id="filter-count-all">0</span></button>
+              <button class="filter-btn" data-filter="received">Received <span class="filter-count" id="filter-count-received">0</span></button>
+              <button class="filter-btn" data-filter="sent">Sent <span class="filter-count" id="filter-count-sent">0</span></button>
+              <span class="filter-divider"></span>
+              <button class="filter-btn" data-filter="identify">identify <span class="filter-count" id="filter-count-identify">0</span></button>
+              <button class="filter-btn" data-filter="feature">feature <span class="filter-count" id="filter-count-feature">0</span></button>
+              <button class="filter-btn" data-filter="custom">custom <span class="filter-count" id="filter-count-custom">0</span></button>
+              <button class="filter-btn" data-filter="summary">summary <span class="filter-count" id="filter-count-summary">0</span></button>
+            </div>
+            
+            <!-- Events Timeline -->
+            <div id="eventsTimeline" class="events-timeline">
+              <!-- Event cards will be inserted here -->
+            </div>
+          </div>
+        </div>
       </div>
-      <div id="experimentGoals" style="display:none">
-        <h3>Experiment Goals</h3>
-        <textarea class="experiments-details"> </textarea>
+
+      <!-- Experiment Goals Section -->
+      <div id="experimentGoals" class="collapsible-section" style="display:none">
+        <div class="section-header" data-target="goalsContent">
+          <span class="collapse-icon"></span>
+          <h3>Experiment Goals</h3>
+          <button class="copy-btn" data-copy-target=".experiments-details" title="Copy to clipboard">Copy</button>
+        </div>
+        <div id="goalsContent" class="section-content">
+          <div class="empty-state" data-for=".experiments-details">Waiting for experiment goal data...</div>
+          <textarea class="experiments-details json-display"></textarea>
+        </div>
       </div>
     </div>
   </body>

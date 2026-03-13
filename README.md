@@ -1,6 +1,8 @@
 # LaunchDarkly Javascript SDK Event Viewer
 
-The LaunchDarkly JavaScript SDK Event Viewer is a Chrome extension designed to capture, display, and validate various events and data related to the LaunchDarkly JavaScript Client SDK. This tool is particularly useful for developers and QA teams who want to monitor and debug their LaunchDarkly implementations.
+The LaunchDarkly JavaScript SDK Event Viewer is a Chrome extension designed to capture, display, and validate various events and data related to the LaunchDarkly JavaScript Client SDK. This tool is for developers and QA teams who want to monitor and debug their LaunchDarkly implementations.
+
+![img](img/overview.jpeg)
 
 ### Features
 1. Capture the following events
@@ -41,8 +43,3 @@ git clone https://github.com/tanben/ld-jssdk-event-viewer.git
 5. Interact with your web page as needed, and the Launchpad tab will display the captured events, Conversion Metrics, Feature Flags, and other relevant data.
 
 
-![img](img/screen2.jpg)
-*View Experimentation metrics and events*
-
-![img](img/screen3.jpg)
-*View feature flags, context and SDK events*
