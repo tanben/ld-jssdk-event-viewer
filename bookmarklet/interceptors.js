@@ -21,12 +21,17 @@
   // ----------------------------------------------------------------
   // URL pattern constants
   // ----------------------------------------------------------------
-  const LD_DOMAINS = ['launchdarkly.com', 'launchdarkly.us'];
   const EVAL_PATH = '/sdk/eval';
   const EVENTS_BULK_PATH = '/events/bulk';
   const GOALS_PATH = '/goals/';
   const STREAM_PATH = 'clientstream';
-  const CLIENT_ID_OFFSET_FROM_END = 3;
+
+  // ----------------------------------------------------------------
+  // Shared helpers — delegated to panel.js (window.LDPanel) at call
+  // time. These are safe because the patched functions only fire when
+  // an actual request happens, by which time panel.js is loaded.
+  // ----------------------------------------------------------------
+  function api() { return window.LDPanel; }
 
   // ----------------------------------------------------------------
   // Event bus — lightweight pub/sub for inter-module communication
@@ -54,37 +59,10 @@
   };
 
   // ----------------------------------------------------------------
-  // URL helpers
+  // URL helpers — delegate to panel.js (LDPanel) for shared functions
   // ----------------------------------------------------------------
   function isLDUrl(url) {
-    if (!url) return false;
-    return LD_DOMAINS.some(domain => url.includes(domain));
-  }
-
-  function parseContextHashFromUrl(url) {
-    const segments = url.split('/');
-    const lastSegment = segments[segments.length - 1] || '';
-    return lastSegment.split('?')[0] || '';
-  }
-
-  function parseClientIDFromUrl(url) {
-    const segments = url.split('/');
-    segments.splice(1, 1);
-    return segments[segments.length - CLIENT_ID_OFFSET_FROM_END];
-  }
-
-  function parseUrlForContext(url) {
-    try {
-      const hash = parseContextHashFromUrl(url);
-      return JSON.parse(atob(hash));
-    } catch (error) {
-      console.warn('[LD Event Viewer] Failed to parse context from URL:', error.message);
-      return {};
-    }
-  }
-
-  function timestamp() {
-    return new Date().toISOString().replace('T', ' ').substring(0, 19);
+    return api().isLaunchDarklyUrl(url);
   }
 
   // ----------------------------------------------------------------
@@ -105,7 +83,7 @@
     if (url.includes(EVENTS_BULK_PATH) && method === 'POST') {
       const postBody = getPostBody();
       if (postBody) {
-        bus.emit('sent', { url, body: postBody, timestamp: timestamp() });
+        bus.emit('sent', { url, body: postBody, timestamp: api().getTimestamp() });
       }
     }
 
@@ -125,7 +103,7 @@
     try {
       const data = JSON.parse(body);
       if (data && Object.keys(data).length > 0) {
-        bus.emit('eval', { url, data, bodyLength: body.length, timestamp: timestamp() });
+        bus.emit('eval', { url, data, bodyLength: body.length, timestamp: api().getTimestamp() });
       }
     } catch (error) {
       console.warn('[LD Event Viewer] Failed to parse eval response:', error.message);
@@ -135,7 +113,7 @@
   function emitGoalsEvent(url, body) {
     if (!body) return;
     try {
-      bus.emit('goals', { url, data: JSON.parse(body), timestamp: timestamp() });
+      bus.emit('goals', { url, data: JSON.parse(body), timestamp: api().getTimestamp() });
     } catch (error) {
       console.warn('[LD Event Viewer] Failed to parse goals response:', error.message);
     }
@@ -212,13 +190,13 @@
       const eventSource = new OriginalEventSource(url, config);
 
       if (url && url.includes(STREAM_PATH) && isLDUrl(url)) {
-        const contextHash = parseContextHashFromUrl(url);
+        const contextHash = api().parseContextHashFromUrl(url);
         bus.emit('stream:open', {
           url,
           hash: contextHash,
-          clientId: parseClientIDFromUrl(url),
-          context: parseUrlForContext(url),
-          timestamp: timestamp(),
+          clientId: api().parseClientIDFromUrl(url),
+          context: api().parseUrlForContext(url),
+          timestamp: api().getTimestamp(),
           eventSource,
         });
 
@@ -229,7 +207,7 @@
             bus.emit('stream:event', {
               hash: contextHash,
               type: eventType,
-              timestamp: timestamp(),
+              timestamp: api().getTimestamp(),
             });
           });
         }
