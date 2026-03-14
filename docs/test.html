@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LD Event Viewer – Demo</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 620px;
+      margin: 40px auto;
+      padding: 0 20px;
+      color: #333;
+      line-height: 1.6;
+    }
+    h1 { font-size: 1.4rem; margin-bottom: 4px; }
+    h3 { font-size: 1rem; margin: 0 0 8px; }
+    nav { font-size: 0.85rem; margin-bottom: 16px; }
+    nav a { color: #667eea; }
+    p { margin: 0 0 10px; }
+    small { color: #888; }
+    small a { color: #667eea; }
+
+    .intro { color: #555; font-size: 0.9rem; margin-bottom: 20px; }
+
+    button, .bm-drag {
+      padding: 10px 20px;
+      margin: 0;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-weight: 500;
+      font-family: inherit;
+      line-height: 1.2;
+      color: #fff;
+      transition: transform 0.1s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    button:hover, .bm-drag:hover { transform: translateY(-1px); text-decoration: none; }
+
+    .launch { background: linear-gradient(135deg, #667eea, #764ba2); }
+    .bm-drag { background: linear-gradient(135deg, #764ba2, #667eea); cursor: grab; }
+
+    /* Launch row */
+    .launch-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
+    .section { margin-bottom: 24px; }
+    hr { border: none; border-top: 1px solid #e0e0e0; margin: 20px 0; }
+
+    /* Sim buttons as a grid with info toggles */
+    .sim-grid { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
+    .sim-row { display: flex; align-items: center; gap: 8px; }
+    .sim-btn { min-width: 0; white-space: nowrap; }
+    .sim-btn.eval { background: #2196F3; }
+    .sim-btn.identify { background: #9c27b0; }
+    .sim-btn.custom { background: #ff9800; }
+    .sim-btn.goals { background: #4CAF50; }
+    .sim-btn.stream { background: #00897b; }
+    .sim-btn.all { background: linear-gradient(135deg, #667eea, #764ba2); }
+
+    .info-wrap { position: relative; display: inline-flex; }
+    .info-toggle {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 20px; height: 20px; padding: 0;
+      background: none; border: 1px solid #ccc; border-radius: 50%;
+      color: #999; font-size: 0.7rem; font-weight: 700;
+      cursor: help; flex-shrink: 0; line-height: 1;
+      font-family: inherit;
+    }
+    .info-toggle:hover { border-color: #999; color: #555; transform: none; }
+    .info-tip {
+      display: none; position: absolute; left: 28px; top: 50%; transform: translateY(-50%);
+      width: 280px; padding: 10px 12px;
+      background: #1a1a2e; color: #ccc; border: 1px solid #333; border-radius: 6px;
+      font-size: 0.78rem; line-height: 1.5; z-index: 100;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+      pointer-events: none;
+    }
+    .info-tip strong { color: #fff; font-weight: 600; }
+    .info-tip code { background: #2a2a4a; padding: 1px 4px; border-radius: 2px; font-size: 0.76rem; }
+    .info-wrap:hover .info-tip,
+    .info-wrap.active .info-tip { display: block; }
+    .info-wrap.active .info-tip { pointer-events: auto; }
+    @media (max-width: 520px) {
+      .info-tip { left: auto; right: 0; top: 28px; transform: none; width: 240px; }
+    }
+
+    /* SDK key */
+    .sdk-key-row { margin-top: 10px; }
+    .sdk-key-row summary {
+      font-size: 0.82rem; color: #667eea; cursor: pointer; user-select: none;
+    }
+    .sdk-key-row summary:hover { text-decoration: underline; }
+    .sdk-key-inner { display: flex; gap: 8px; margin-top: 6px; align-items: center; }
+    .sdk-key-inner input {
+      flex: 1; font-family: 'SF Mono', Monaco, monospace; font-size: 0.8rem;
+      padding: 6px 10px; border: 1px solid #ddd; border-radius: 5px;
+      color: #333;
+    }
+    .sdk-key-inner input::placeholder { color: #aaa; }
+    .sdk-key-inner button {
+      background: #667eea; white-space: nowrap;
+    }
+    .sdk-key-status {
+      font-size: 0.82rem; color: #4CAF50; font-weight: 500;
+    }
+    .sdk-live-badge {
+      display: inline-block; padding: 2px 8px; background: #4CAF50; color: #fff;
+      border-radius: 3px; font-size: 0.72rem; font-weight: 600; margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    #log {
+      background: #1a1a2e;
+      color: #4CAF50;
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 0.78rem;
+      padding: 12px;
+      border-radius: 6px;
+      min-height: 80px;
+      max-height: 250px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <nav><a href="./">&larr; Home</a></nav>
+  <h1>LD Event Viewer &ndash; Demo</h1>
+  <p class="intro">
+    The Event Viewer shows you what the <a href="https://docs.launchdarkly.com/sdk/client-side/javascript" target="_blank">LaunchDarkly JavaScript SDK</a> is doing under the hood &mdash; which feature flags it evaluated, what user context it sent, any custom tracking events, and the real-time streaming connection it uses to receive flag updates. This page simulates that SDK traffic so you can try the viewer without setting up a real LD environment.
+  </p>
+
+  <div class="section">
+    <h3>1. Launch the viewer</h3>
+    <div class="launch-row">
+      <button class="launch" id="launchBtn">Launch Event Viewer</button>
+      <a class="bm-drag" id="bmDrag" href="#" title="Drag to bookmarks bar">LD Event Viewer</a>
+    </div>
+    <p><small>Drag the button above to your bookmarks bar, then click it on any page with the LD SDK.</small></p>
+
+    <input id="sdkKeyHidden" type="hidden" value="" />
+    <details class="sdk-key-row" id="sdkKeyDetails">
+      <summary id="sdkKeySummary">Connect to a real LD environment</summary>
+      <div class="sdk-key-inner">
+        <input id="sdkKeyInput" type="text" placeholder="Paste client-side ID" autocomplete="off" spellcheck="false" />
+        <button id="sdkKeyBtn">Connect</button>
+      </div>
+    </details>
+  </div>
+
+  <hr>
+
+  <div class="section">
+    <h3 id="simHeader">2. Simulate SDK traffic</h3>
+    <p id="simDesc"><small>Each button fires a mock request that the viewer will intercept and display.</small></p>
+
+    <div class="sim-grid">
+      <div class="sim-row">
+        <button class="sim-btn all" id="simAll">Send All</button>
+        <span class="info-wrap">
+          <button class="info-toggle" aria-label="What does Send All do?">?</button>
+          <span class="info-tip"><strong>Send All</strong> fires every event type below in sequence: a flag evaluation request, an identify call, feature &amp; summary events, custom tracking events, conversion goals, and a streaming connection. Good for seeing the full picture in one click.</span>
+        </span>
+      </div>
+
+      <hr style="margin: 8px 0;">
+
+      <div class="sim-row">
+        <button class="sim-btn eval" id="simEval">Fetch Flags</button>
+        <span class="info-wrap">
+          <button class="info-toggle" aria-label="What are flag evaluations?">?</button>
+          <span class="info-tip"><strong>Flag evaluations</strong> happen when the SDK initializes. It sends the current user context to LaunchDarkly and gets back every feature flag value &mdash; booleans, strings, numbers, JSON objects. Each flag includes the <strong>variation</strong> served and the <strong>reason</strong> it was chosen: targeting rule match, percentage rollout, individual user target, fallthrough default, etc. The viewer shows all of this in a sortable table.</span>
+        </span>
+      </div>
+
+      <div class="sim-row">
+        <button class="sim-btn identify" id="simIdentify">Send Identity</button>
+        <span class="info-wrap">
+          <button class="info-toggle" aria-label="What is an identify event?">?</button>
+          <span class="info-tip"><strong>Identify</strong> tells the SDK who the current user is. Your app calls <code>identify()</code> with a context object containing a key, name, email, and any custom attributes. The SDK posts this to LaunchDarkly so targeting rules can evaluate against it. The viewer shows the full context payload so you can verify the right attributes are being sent.</span>
+        </span>
+      </div>
+
+      <div class="sim-row">
+        <button class="sim-btn custom" id="simCustom">Track Custom Event</button>
+        <span class="info-wrap">
+          <button class="info-toggle" aria-label="What are custom events?">?</button>
+          <span class="info-tip"><strong>Custom events</strong> are arbitrary tracking calls your app makes via <code>track('event-key')</code>. You can attach a numeric <strong>metricValue</strong> (e.g. page load time in ms) and a JSON <strong>data</strong> payload. LaunchDarkly uses these to measure experiment results &mdash; conversion rates, revenue, performance metrics, etc. The viewer shows the event key, value, and any attached data.</span>
+        </span>
+      </div>
+
+      <div class="sim-row">
+        <button class="sim-btn goals" id="simGoals">Fetch Goals</button>
+        <span class="info-wrap">
+          <button class="info-toggle" aria-label="What are conversion goals?">?</button>
+          <span class="info-tip"><strong>Conversion goals</strong> (also called "metric definitions") tell the SDK what user actions to watch for. Each goal has a <strong>kind</strong> &mdash; <em>pageview</em> (matches by URL pattern) or <em>click</em> (matches by CSS selector + URL). The SDK fetches these on init and auto-fires events when a match occurs. The viewer validates each goal against the current page: does the URL match? Does the CSS selector find an element?</span>
+        </span>
+      </div>
+
+      <div class="sim-row">
+        <button class="sim-btn stream" id="simStream">Open Stream</button>
+        <span class="info-wrap">
+          <button class="info-toggle" aria-label="What is the live stream?">?</button>
+          <span class="info-tip"><strong>Streaming</strong> is how the SDK receives flag updates in real time. It opens a <strong>Server-Sent Events</strong> (SSE) connection to LaunchDarkly's edge servers. When someone changes a flag in the dashboard, a <code>put</code> or <code>patch</code> message arrives here within milliseconds &mdash; no polling or page reload needed. The viewer shows when the connection opens, any messages received, and connection errors.</span>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="section">
+    <h3>Log</h3>
+    <div id="log"></div>
+  </div>
+
+  <script>
+    // -- Info tooltips: click to toggle for mobile, hover handled by CSS --
+    document.querySelectorAll('.info-toggle').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var wrap = btn.closest('.info-wrap');
+        var wasActive = wrap.classList.contains('active');
+        // Close all others first
+        document.querySelectorAll('.info-wrap.active').forEach(function (w) { w.classList.remove('active'); });
+        if (!wasActive) wrap.classList.add('active');
+      });
+    });
+    // Close on outside click
+    document.addEventListener('click', function () {
+      document.querySelectorAll('.info-wrap.active').forEach(function (w) { w.classList.remove('active'); });
+    });
+
+    var logEl = document.getElementById('log');
+    function log(msg) {
+      logEl.textContent += '[' + new Date().toLocaleTimeString() + '] ' + msg + '\n';
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    // -- Resolve base URL (works on localhost AND GitHub Pages subpaths) --
+    var base = window.location.origin +
+      window.location.pathname.replace(/\/test\.html$/, '').replace(/\/$/, '') +
+      '/dist/v1';
+
+    // -- Bookmarklet drag link --
+    var bmCode = "javascript:void(function(){var s=document.createElement('script');s.src='" + base + "/loader.js';(document.head||document.documentElement).appendChild(s)})()";
+    document.getElementById('bmDrag').href = bmCode;
+
+    // -- Launch the bookmarklet --
+    document.getElementById('launchBtn').addEventListener('click', function () {
+      var s = document.createElement('script');
+      s.src = base + '/loader.js';
+      (document.head || document.documentElement).appendChild(s);
+      log('Loaded bookmarklet from ' + base);
+    });
+
+    // ================================================================
+    // Mode: mock (default) or live (real LD SDK)
+    // ================================================================
+    var liveClient = null;
+
+    // -- SDK key input --
+    var sdkKeyHidden = document.getElementById('sdkKeyHidden');
+    var sdkKeyInput = document.getElementById('sdkKeyInput');
+    var sdkKeyBtn = document.getElementById('sdkKeyBtn');
+    var sdkKeyDetails = document.getElementById('sdkKeyDetails');
+    var sdkKeySummary = document.getElementById('sdkKeySummary');
+
+    // Restore from localStorage — auto-connect if found
+    var savedKey = localStorage.getItem('ld-demo-sdk-key');
+    if (savedKey) {
+      sdkKeyHidden.value = savedKey;
+      connectLive(savedKey);
+    }
+
+    sdkKeyBtn.addEventListener('click', function () {
+      var key = sdkKeyInput.value.trim();
+      if (!key) { log('Enter a client-side ID first.'); return; }
+      localStorage.setItem('ld-demo-sdk-key', key);
+      sdkKeyHidden.value = key;
+      connectLive(key);
+    });
+
+    function connectLive(clientSideId) {
+      log('Loading LD JS SDK...');
+      sdkKeyBtn.disabled = true;
+      sdkKeyBtn.textContent = 'Loading...';
+
+      var script = document.createElement('script');
+      script.src = 'https://unpkg.com/launchdarkly-js-client-sdk@3';
+      script.onload = function () {
+        log('LD JS SDK loaded, initializing with key: ' + clientSideId.substring(0, 6) + '...');
+        var context = { kind: 'user', key: 'demo-user-' + Date.now(), name: 'Demo User', email: 'demo@example.com' };
+        liveClient = LDClient.initialize(clientSideId, context, { evaluationReasons: true });
+        liveClient.on('ready', function () {
+          log('LIVE: SDK connected — ' + Object.keys(liveClient.allFlags()).length + ' flags loaded');
+          switchToLive();
+        });
+        liveClient.on('failed', function (err) {
+          log('LIVE: SDK failed to connect — check your client-side ID');
+          sdkKeyBtn.disabled = false;
+          sdkKeyBtn.textContent = 'Connect';
+          liveClient = null;
+        });
+      };
+      script.onerror = function () {
+        log('Failed to load LD JS SDK from CDN');
+        sdkKeyBtn.disabled = false;
+        sdkKeyBtn.textContent = 'Connect';
+      };
+      (document.head || document.documentElement).appendChild(script);
+    }
+
+    function switchToLive() {
+      sdkKeyDetails.open = false;
+      sdkKeySummary.innerHTML = '<span class="sdk-key-status">\u2713 Connected to LD</span>';
+      document.getElementById('simHeader').innerHTML = '2. SDK traffic <span class="sdk-live-badge">LIVE</span>';
+      document.getElementById('simDesc').innerHTML = '<small>These buttons trigger real SDK calls against your LD environment.</small>';
+    }
+
+    // ================================================================
+    // Mock server (used when no live SDK)
+    // ================================================================
+    function b64(obj) { return btoa(JSON.stringify(obj)); }
+
+    var mockContext = {
+      kind: 'multi',
+      user: { key: 'user-123', name: 'Test User', email: 'test@example.com' },
+      org: { key: 'org-456', name: 'Acme Corp' }
+    };
+    var contextHash = b64(mockContext);
+    var mockClientId = '6123456789abcdef01234567';
+
+    function mockResponse(data, status) {
+      status = status || 200;
+      return new Response(JSON.stringify(data), {
+        status: status,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    var _baseFetch = window.fetch;
+    window.fetch = function (input, init) {
+      var url = typeof input === 'string' ? input : (input && input.url || '');
+
+      if (url.includes('app.launchdarkly.com/sdk/evalx/') && url.includes(mockClientId)) {
+        log('Mock: responding to evalx request');
+        return Promise.resolve(mockResponse({
+          'enable-new-ui': { value: true, variation: 0, version: 12, reason: { kind: 'RULE_MATCH', ruleIndex: 0, inExperiment: true } },
+          'dark-mode': { value: false, variation: 1, version: 5, reason: { kind: 'FALLTHROUGH' } },
+          'banner-text': { value: 'Welcome!', variation: 2, version: 3, reason: { kind: 'TARGET_MATCH' } },
+          'max-items': { value: 50, variation: 0, version: 7, reason: { kind: 'FALLTHROUGH' } },
+          'feature-config': { value: { theme: 'blue', layout: 'grid' }, variation: 1, version: 2, reason: { kind: 'FALLTHROUGH' } }
+        }));
+      }
+
+      if (url.includes('events.launchdarkly.com/events/bulk/') && url.includes(mockClientId)) {
+        log('Mock: acknowledging events/bulk POST');
+        return Promise.resolve(new Response('', { status: 202 }));
+      }
+
+      if (url.includes('app.launchdarkly.com/sdk/goals/') && url.includes(mockClientId)) {
+        log('Mock: responding to goals request');
+        return Promise.resolve(mockResponse([
+          {
+            kind: 'pageview', key: 'homepage-view',
+            urls: [{ kind: 'substring', substring: 'test.html' }]
+          },
+          {
+            kind: 'click', key: 'signup-click', selector: '#simAll',
+            urls: [{ kind: 'substring', substring: 'test.html' }]
+          },
+          {
+            kind: 'click', key: 'missing-element', selector: '#nonexistent',
+            urls: [{ kind: 'substring', substring: 'test.html' }]
+          }
+        ]));
+      }
+
+      return _baseFetch.apply(this, arguments);
+    };
+
+    // ================================================================
+    // Simulation functions (mock or live)
+    // ================================================================
+    function simEval() {
+      if (liveClient) {
+        log('LIVE: Fetching all flags...');
+        var flags = liveClient.allFlags();
+        log('LIVE: ' + Object.keys(flags).length + ' flags — ' + JSON.stringify(flags).substring(0, 200) + '...');
+        return;
+      }
+      var url = 'https://app.launchdarkly.com/sdk/evalx/' + mockClientId + '/contexts/' + contextHash;
+      log('Fetching: ' + url);
+      fetch(url).then(function () { log('Eval response processed'); });
+    }
+
+    function simSentEvents(events) {
+      var url = 'https://events.launchdarkly.com/events/bulk/' + mockClientId;
+      log('POSTing ' + events.length + ' event(s) to: ' + url);
+      fetch(url, {
+        method: 'POST',
+        body: JSON.stringify(events),
+        headers: { 'Content-Type': 'application/json' }
+      }).then(function () { log('Events acknowledged'); });
+    }
+
+    function simIdentify() {
+      if (liveClient) {
+        var ctx = { kind: 'user', key: 'user-' + Date.now(), name: 'Identified User', email: 'identified@example.com', plan: 'premium' };
+        log('LIVE: Calling identify(' + ctx.key + ')...');
+        liveClient.identify(ctx).then(function () {
+          log('LIVE: identify complete — ' + Object.keys(liveClient.allFlags()).length + ' flags re-evaluated');
+        });
+        return;
+      }
+      simSentEvents([
+        { kind: 'identify', key: 'user-123', context: mockContext, creationDate: Date.now() }
+      ]);
+    }
+
+    function simCustom() {
+      if (liveClient) {
+        log('LIVE: Calling track("page-load-time", data, 1234)...');
+        liveClient.track('page-load-time', { url: window.location.href }, 1234);
+        liveClient.track('button-click');
+        liveClient.flush();
+        log('LIVE: Custom events tracked and flushed');
+        return;
+      }
+      simSentEvents([
+        { kind: 'custom', key: 'page-load-time', data: { url: window.location.href }, metricValue: 1234, creationDate: Date.now() },
+        { kind: 'custom', key: 'button-click', creationDate: Date.now() }
+      ]);
+    }
+
+    function simFeatureEvents() {
+      if (liveClient) {
+        log('LIVE: Reading flag variations to generate feature events...');
+        var flags = liveClient.allFlags();
+        var keys = Object.keys(flags).slice(0, 5);
+        keys.forEach(function (k) { liveClient.variation(k); });
+        liveClient.flush();
+        log('LIVE: Evaluated ' + keys.length + ' flags, events flushed');
+        return;
+      }
+      simSentEvents([
+        { kind: 'feature', key: 'enable-new-ui', value: true, variation: 0, version: 12, default: false, creationDate: Date.now(), reason: { kind: 'RULE_MATCH', inExperiment: true } },
+        { kind: 'feature', key: 'dark-mode', value: false, variation: 1, version: 5, default: false, creationDate: Date.now() },
+        { kind: 'summary', startDate: Date.now() - 60000, endDate: Date.now(), features: {
+          'enable-new-ui': { default: false, counters: [{ value: true, variation: 0, version: 12, count: 3 }] },
+          'dark-mode': { default: false, counters: [{ value: false, variation: 1, version: 5, count: 7 }] }
+        }}
+      ]);
+    }
+
+    function simGoals() {
+      if (liveClient) {
+        log('LIVE: Goals are fetched automatically by the SDK on init. Check the viewer panel.');
+        return;
+      }
+      var url = 'https://app.launchdarkly.com/sdk/goals/' + mockClientId;
+      log('Fetching goals: ' + url);
+      fetch(url).then(function () { log('Goals response processed'); });
+    }
+
+    function simStream() {
+      if (liveClient) {
+        log('LIVE: Streaming connection is already open. Change a flag in LD to see an update.');
+        return;
+      }
+      log('Simulating stream connection...');
+      try {
+        var streamUrl = 'https://clientstream.launchdarkly.com/eval/' + mockClientId + '/' + contextHash;
+        var es = new EventSource(streamUrl);
+        es.onerror = function () {
+          es.close();
+          log('Stream closed (expected \u2013 mock endpoint)');
+        };
+      } catch (e) {
+        log('Stream simulation error: ' + e.message);
+      }
+    }
+
+    function simAll() {
+      simEval();
+      setTimeout(simIdentify, 200);
+      setTimeout(simFeatureEvents, 400);
+      setTimeout(simCustom, 600);
+      setTimeout(simGoals, 800);
+      setTimeout(simStream, 1000);
+    }
+
+    // Wire up buttons
+    document.getElementById('simEval').addEventListener('click', simEval);
+    document.getElementById('simIdentify').addEventListener('click', simIdentify);
+    document.getElementById('simCustom').addEventListener('click', simCustom);
+    document.getElementById('simGoals').addEventListener('click', simGoals);
+    document.getElementById('simStream').addEventListener('click', simStream);
+    document.getElementById('simAll').addEventListener('click', simAll);
+
+    log('Ready. Launch the event viewer, then send some traffic.');
+  </script>
+</body>
+</html>

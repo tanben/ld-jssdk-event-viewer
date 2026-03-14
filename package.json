@@ -1,0 +1,11 @@
+{
+  "name": "ld-jssdk-event-viewer",
+  "version": "1.0.0",
+  "description": "LaunchDarkly JS SDK Event Viewer – Chrome Extension & Bookmarklet",
+  "private": true,
+  "scripts": {
+    "build": "./build.sh",
+    "serve": "npx http-server docs -p 8080 -c-1 --cors",
+    "dev": "./build.sh && npx http-server docs -p 8080 -c-1 --cors"
+  }
+}
