@@ -1,0 +1,212 @@
+/**
+ * Bookmarklet entry point — wires the event bus to the extension's
+ * panel.js via window.LDPanel, inside an isolated Shadow DOM.
+ *
+ * Shadow DOM isolation:
+ *   The panel UI is rendered inside a Shadow DOM attached to a fixed-position
+ *   host element. This prevents the host page's styles from affecting the
+ *   viewer, and prevents the viewer's styles from leaking into the page.
+ *   CSS is loaded into the shadow root via <link> elements — the extension's
+ *   mystyle.css (with :host-scoped design tokens) plus a small overrides file
+ *   for bookmarklet-specific panel chrome.
+ *
+ * data-action pattern:
+ *   Interactive elements in panel-html.js use data-action="event->handlerName"
+ *   attributes. wireActions() reads these and binds event listeners to the
+ *   corresponding handler functions, similar to Stimulus.
+ *
+ * Requires (loaded in order by loader.js):
+ *   - interceptors.js     (LDJSSDK.bus)
+ *   - panel-html.js       (LDJSSDK.panelHTML)
+ *   - panel.js            (window.LDPanel)
+ */
+(function () {
+  'use strict';
+
+  const LDJSSDK = window.LDJSSDK = window.LDJSSDK || {};
+  const api = window.LDPanel;
+
+  // Prevent double-init; toggle visibility if re-invoked
+  if (LDJSSDK.active) {
+    const existing = document.getElementById('ld-event-viewer-root');
+    if (existing) {
+      existing.style.display = existing.style.display === 'none' ? '' : 'none';
+    }
+    return;
+  }
+  LDJSSDK.active = true;
+
+  const bus = LDJSSDK.bus;
+  const panelHTML = LDJSSDK.panelHTML;
+
+  if (!bus || !panelHTML || !api) {
+    console.error('[LD Event Viewer] Missing dependencies:', {
+      bus: !!bus,
+      panelHTML: !!panelHTML,
+      api: !!api,
+    });
+    return;
+  }
+
+  // ================================================================
+  // wireActions — Stimulus-inspired declarative event binding
+  // ================================================================
+  function wireActions(root, actions) {
+    for (const element of root.querySelectorAll('[data-action]')) {
+      const [event, handlerName] = element.dataset.action.split('->');
+      const handler = actions[handlerName];
+      if (handler) {
+        element.addEventListener(event, handler);
+      } else {
+        console.warn(`[LD Event Viewer] No handler for action: ${handlerName}`);
+      }
+    }
+  }
+
+  // ================================================================
+  // Shadow DOM host
+  // ================================================================
+  const host = document.createElement('div');
+  host.id = 'ld-event-viewer-root';
+  host.style.cssText = [
+    'position:fixed', 'top:0', 'right:0',
+    'width:480px', 'height:100vh',
+    'z-index:2147483647',
+    'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif',
+  ].join(';') + ';';
+  document.documentElement.appendChild(host);
+
+  const shadow = host.attachShadow({ mode: 'open' });
+
+  // ================================================================
+  // Load CSS into shadow DOM
+  // ================================================================
+  function loadCSS(url) {
+    return new Promise((resolve, reject) => {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = url;
+      link.onload = resolve;
+      link.onerror = () => reject(new Error(`Failed to load CSS: ${url}`));
+      shadow.appendChild(link);
+    });
+  }
+
+  // ================================================================
+  // Build panel DOM inside shadow root
+  // ================================================================
+  function buildPanel() {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'ld-viewer-panel';
+    wrapper.innerHTML = panelHTML();
+    shadow.appendChild(wrapper);
+  }
+
+  // ================================================================
+  // Draggable panel header
+  // ================================================================
+  function makeDraggable() {
+    const header = shadow.querySelector('.panel-header');
+    if (!header) return;
+
+    let isDragging = false;
+    let startClientX = 0;
+    let startClientY = 0;
+    let startRight = 0;
+    let startTop = 0;
+
+    header.addEventListener('mousedown', (event) => {
+      // Don't drag when clicking buttons
+      if (event.target.tagName === 'BUTTON') return;
+
+      isDragging = true;
+      startClientX = event.clientX;
+      startClientY = event.clientY;
+
+      const rect = host.getBoundingClientRect();
+      startRight = window.innerWidth - rect.right;
+      startTop = rect.top;
+
+      event.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (event) => {
+      if (!isDragging) return;
+      const deltaX = event.clientX - startClientX;
+      const deltaY = event.clientY - startClientY;
+      host.style.right = Math.max(0, startRight - deltaX) + 'px';
+      host.style.top = Math.max(0, startTop + deltaY) + 'px';
+    });
+
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
+  }
+
+  // ================================================================
+  // Wire event bus → LDPanel handlers
+  // ================================================================
+  function wireEventBus() {
+    bus.on('eval', (data) => api.handleEval(data));
+    bus.on('sent', (data) => api.handleSent(data));
+    bus.on('goals', (data) => api.handleGoals(data));
+    bus.on('stream:open', (data) => api.handleStreamOpen(data));
+    bus.on('stream:event', (data) => api.handleStreamEvent(data));
+  }
+
+  // ================================================================
+  // Global remove function
+  // ================================================================
+  LDJSSDK.remove = function () {
+    const root = document.getElementById('ld-event-viewer-root');
+    if (root) root.remove();
+    LDJSSDK.active = false;
+    console.log('[LD Event Viewer] Removed.');
+  };
+
+  // ================================================================
+  // Boot
+  // ================================================================
+  LDJSSDK.init = function (cssUrls) {
+    const doInit = function () {
+      buildPanel();
+
+      // Point panel.js at the shadow DOM
+      api.setRoot(shadow);
+      api.setupButtons();
+
+      // Wire data-action handlers for bookmarklet-specific buttons
+      wireActions(shadow, {
+        close() {
+          host.style.display = 'none';
+        },
+        minimize() {
+          const body = shadow.querySelector('.panel-body');
+          const minimizeBtn = shadow.querySelector('#minimizeBtn');
+          if (body.style.display === 'none') {
+            body.style.display = '';
+            host.style.height = '100vh';
+            minimizeBtn.innerHTML = '\u2015';
+          } else {
+            body.style.display = 'none';
+            host.style.height = 'auto';
+            minimizeBtn.innerHTML = '\u25A1';
+          }
+        },
+      });
+
+      makeDraggable();
+      wireEventBus();
+      api.showToast('LD Event Viewer active \u2013 intercepting SDK traffic', 'info');
+    };
+
+    // Load stylesheets into shadow DOM, then initialize
+    const cssPromises = cssUrls.map(url =>
+      loadCSS(url).catch(error => {
+        console.warn('[LD Event Viewer]', error.message);
+      })
+    );
+
+    Promise.all(cssPromises).then(doInit);
+  };
+})();

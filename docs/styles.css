@@ -1,0 +1,750 @@
+/*
+ * Supplemental styles for LD SDK Event Viewer docs pages.
+ * Used alongside Pico CSS classless (CDN) for dark-themed docs.
+ *
+ * Strategy: Override Pico's CSS custom properties to tame defaults,
+ * then use targeted rules for our components.
+ */
+
+/* ================================================================
+   Pico CSS variable overrides — tame aggressive defaults
+   ================================================================ */
+:root {
+    --brand-gradient: linear-gradient(135deg, #667eea, #764ba2);
+    --brand-start: #667eea;
+    --brand-end: #764ba2;
+    --code-bg: #16213e;
+    --code-border: #2a2a4a;
+
+    /* Shrink Pico's form element padding (used by button, input, etc) */
+    --pico-form-element-spacing-vertical: 0.5rem;
+    --pico-form-element-spacing-horizontal: 0.75rem;
+    /* Shrink Pico's spacing scale */
+    --pico-spacing: 0.75rem;
+    --pico-nav-element-spacing-vertical: 0.25rem;
+    --pico-nav-element-spacing-horizontal: 0;
+    --pico-nav-link-spacing-vertical: 0.25rem;
+    --pico-nav-link-spacing-horizontal: 0;
+}
+
+body {
+    max-width: 740px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+}
+
+/* ================================================================
+   Inline code — override Pico's display:inline-block + padding
+   ================================================================ */
+code, kbd, samp {
+    display: inline;
+    padding: 2px 6px;
+    background: var(--code-bg);
+    border-radius: 3px;
+    font-size: 0.82em;
+    line-height: inherit;
+    vertical-align: baseline;
+}
+
+/* Pico also sets line-height:initial on the 4-element selector */
+code, kbd, pre, samp {
+    line-height: inherit;
+}
+
+/* ================================================================
+   Pre blocks
+   ================================================================ */
+pre {
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    border-radius: 6px;
+    padding: 14px;
+    overflow-x: auto;
+    margin: 10px 0 16px;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    position: relative;
+}
+
+/* Override Pico's pre > code { display:block; padding:var(--pico-spacing) } */
+pre > code, pre > samp {
+    display: inline;
+    padding: 0;
+    background: none;
+    line-height: inherit;
+}
+
+/* ================================================================
+   Typography — tame Pico's large defaults
+   ================================================================ */
+h1 { font-size: 1.8rem; color: #fff; margin-bottom: 6px; }
+h2 { font-size: 1.25rem; color: #fff; margin: 36px 0 12px; }
+h3 { font-size: 1.05rem; color: #ddd; margin: 20px 0 8px; }
+p  { margin-bottom: 10px; color: #ccc; }
+a  { color: #667eea; }
+
+/* ================================================================
+   Nav — tame Pico's flexbox nav styling
+   ================================================================ */
+nav {
+    display: block;
+    margin: 12px 0 4px;
+}
+
+nav a {
+    font-size: 0.85rem;
+    color: #888;
+    text-decoration: none;
+}
+
+nav a:hover { color: #ccc; }
+
+/* Heading accent for test page */
+.heading-accent {
+    background: var(--brand-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* ================================================================
+   Hero (index.html)
+   ================================================================ */
+.hero {
+    padding: 52px 0 36px;
+    text-align: center;
+}
+
+.hero h1 {
+    font-size: 2.2rem;
+    margin-bottom: 12px;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+}
+
+.hero h1 span {
+    background: var(--brand-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.hero .tagline {
+    color: #999;
+    font-size: 1.05rem;
+    max-width: 520px;
+    margin: 0 auto 20px;
+    line-height: 1.5;
+}
+
+.hero-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.hero-btn {
+    display: inline-block;
+    padding: 10px 22px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    line-height: 1.2;
+    text-decoration: none;
+    width: auto;
+    transition: transform 0.1s, box-shadow 0.15s;
+}
+
+.hero-btn:hover {
+    transform: translateY(-1px);
+    text-decoration: none;
+}
+
+.hero-btn.primary {
+    background: var(--brand-gradient);
+    color: #fff;
+    box-shadow: 0 2px 12px rgba(102,126,234,0.3);
+}
+
+.hero-btn.primary:hover {
+    box-shadow: 0 4px 20px rgba(102,126,234,0.4);
+}
+
+.hero-btn.secondary {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--code-border);
+    color: #ccc;
+}
+
+.hero-btn.secondary:hover {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+}
+
+/* ================================================================
+   Feature grid (index.html)
+   ================================================================ */
+.features {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    list-style: none;
+    padding: 0;
+    margin: 0 0 6px;
+}
+
+@media (max-width: 560px) {
+    .features { grid-template-columns: 1fr; }
+}
+
+.features li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 7px 10px;
+    background: var(--code-bg);
+    border-radius: 5px;
+    font-size: 0.88rem;
+    color: #ccc;
+}
+
+.features li::before {
+    content: '\2713';
+    color: #4CAF50;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+/* ================================================================
+   Tabs (index.html)
+   ================================================================ */
+.tabs {
+    display: flex;
+    gap: 0;
+    margin-top: 36px;
+    border-bottom: 2px solid var(--code-border);
+}
+
+.tab-btn {
+    padding: 10px 24px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    color: #888;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+    font-family: inherit;
+    line-height: 1.2;
+    width: auto;
+}
+
+.tab-btn:hover { color: #ccc; }
+
+.tab-btn.active {
+    color: #fff;
+    border-bottom-color: var(--brand-start);
+}
+
+.tab-panel { display: none; padding-top: 4px; }
+.tab-panel.active { display: block; }
+
+/* ================================================================
+   Steps (index.html)
+   ================================================================ */
+ol.steps {
+    counter-reset: step;
+    list-style: none;
+    padding: 0;
+    margin: 8px 0 12px;
+}
+
+ol.steps li {
+    counter-increment: step;
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    align-items: flex-start;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: #ccc;
+}
+
+ol.steps li::before {
+    content: counter(step);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 26px;
+    height: 26px;
+    background: var(--brand-gradient);
+    color: #fff;
+    border-radius: 50%;
+    font-size: 0.78rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+/* ================================================================
+   Bookmarklet button (index.html)
+   ================================================================ */
+.bm-btn {
+    display: inline-block;
+    padding: 10px 24px;
+    background: var(--brand-gradient);
+    color: #fff;
+    border-radius: 6px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: grab;
+    margin: 8px 0;
+    font-size: 0.9rem;
+}
+
+.bm-btn,
+.bm-btn:hover,
+.bm-btn:visited,
+.bm-btn:focus {
+    color: #fff;
+    text-decoration: none;
+}
+
+.hint {
+    font-size: 0.82rem;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+/* ================================================================
+   Copy row (index.html)
+   ================================================================ */
+.copy-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin: 8px 0;
+}
+
+.copy-row input[type="text"] {
+    flex: 1;
+    font-family: 'SF Mono', Monaco, monospace;
+    font-size: 0.78rem;
+    background: var(--code-bg);
+    color: #ccc;
+    border: 1px solid var(--code-border);
+    border-radius: 5px;
+    padding: 8px 10px;
+    height: auto;
+    width: auto;
+    line-height: 1.4;
+    margin-bottom: 0;
+}
+
+button.copy-btn {
+    padding: 8px 14px;
+    background: var(--brand-start);
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.82rem;
+    line-height: 1.2;
+    white-space: nowrap;
+    width: auto;
+    margin: 0;
+}
+
+button.copy-btn:hover { background: var(--brand-end); }
+
+button.pre-copy {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 4px 10px;
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    border-radius: 4px;
+    color: #999;
+    font-size: 0.72rem;
+    line-height: 1.2;
+    cursor: pointer;
+    font-family: inherit;
+    width: auto;
+    margin: 0;
+    text-align: center;
+}
+
+button.pre-copy:hover {
+    background: #2a3d5d;
+    color: #ccc;
+}
+
+/* ================================================================
+   Test page (test.html)
+   ================================================================ */
+.intro {
+    color: #999;
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+}
+
+.launch-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+}
+
+.section { margin-bottom: 24px; }
+
+/* Simulation buttons */
+.sim-btn { min-width: 0; white-space: nowrap; flex-shrink: 0; }
+.sim-btn.eval { background: #2196F3; }
+.sim-btn.identify { background: #9c27b0; }
+.sim-btn.custom { background: #ff9800; }
+.sim-btn.goals { background: #4CAF50; }
+.sim-btn.stream { background: #00897b; }
+.sim-btn.all { background: var(--brand-gradient); }
+
+/* Common button styling for test page simulation buttons */
+.sim-btn, .launch, .bm-drag {
+    padding: 10px 20px;
+    margin: 0;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.88rem;
+    font-weight: 500;
+    font-family: inherit;
+    line-height: 1.2;
+    color: #fff;
+    transition: transform 0.1s;
+    text-decoration: none;
+    display: inline-block;
+    width: auto;
+}
+
+.sim-btn:hover, .launch:hover, .bm-drag:hover {
+    transform: translateY(-1px);
+    text-decoration: none;
+}
+
+.launch { background: var(--brand-gradient); }
+.bm-drag { background: linear-gradient(135deg, #764ba2, #667eea); cursor: grab; }
+
+.sim-divider {
+    margin: 6px 0;
+    border: none;
+    border-top: 1px solid var(--code-border);
+}
+
+/* Info tooltips */
+.info-wrap { position: relative; display: inline-flex; }
+
+button.info-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    background: none;
+    border: 1px solid #555;
+    border-radius: 50%;
+    color: #999;
+    font-size: 0.7rem;
+    font-weight: 700;
+    cursor: help;
+    flex-shrink: 0;
+    line-height: 1;
+    font-family: inherit;
+}
+
+button.info-toggle:hover {
+    border-color: #999;
+    color: #ccc;
+    transform: none;
+}
+
+.info-tip {
+    display: none;
+    position: absolute;
+    left: 28px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 280px;
+    padding: 10px 12px;
+    background: #1a1a2e;
+    color: #ccc;
+    border: 1px solid #333;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    z-index: 100;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    pointer-events: none;
+}
+
+.info-tip strong { color: #fff; font-weight: 600; }
+.info-tip code { background: var(--code-border); padding: 1px 4px; border-radius: 2px; font-size: 0.76rem; }
+
+.info-wrap:hover .info-tip,
+.info-wrap.active .info-tip { display: block; }
+.info-wrap.active .info-tip { pointer-events: auto; }
+
+@media (max-width: 520px) {
+    .info-tip { left: auto; right: 0; top: 28px; transform: none; width: 240px; }
+}
+
+/* ================================================================
+   Operations list (test.html) — button rows with inline panels
+   ================================================================ */
+.ops-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 8px 0;
+}
+
+.op-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 0;
+}
+
+/* Inline panel — hidden by default, toggled by JS */
+.op-panel {
+    display: none;
+    padding: 10px 14px 12px;
+    margin: 2px 0 6px;
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    border-radius: 6px;
+}
+
+.op-panel.open {
+    display: block;
+}
+
+.op-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.op-panel-hint {
+    font-size: 0.78rem;
+    color: #666;
+    margin: 0 0 6px;
+    line-height: 1.4;
+}
+
+.op-panel-hint code {
+    font-size: 0.74rem;
+}
+
+.op-panel-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+/* SDK key input */
+.sdk-key-row { margin-top: 10px; }
+
+.sdk-key-row summary {
+    font-size: 0.82rem;
+    color: var(--brand-start);
+    cursor: pointer;
+    user-select: none;
+}
+
+.sdk-key-row summary:hover { text-decoration: underline; }
+
+.sdk-key-inner {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+    align-items: center;
+}
+
+.sdk-key-inner input {
+    flex: 1;
+    font-family: 'SF Mono', Monaco, monospace;
+    font-size: 0.8rem;
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    height: auto;
+    width: auto;
+    margin-bottom: 0;
+    line-height: 1.4;
+}
+
+.sdk-key-inner input::placeholder { color: #aaa; }
+button.sdk-key-btn {
+    background: var(--brand-start);
+    white-space: nowrap;
+    width: auto;
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    height: auto;
+    margin: 0;
+    border: none;
+    border-radius: 5px;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+button.sdk-key-btn:hover { background: var(--brand-end); }
+
+.sdk-key-status {
+    font-size: 0.82rem;
+    color: #4CAF50;
+    font-weight: 500;
+}
+
+.sdk-live-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #4CAF50;
+    color: #fff;
+    border-radius: 3px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+/* Evaluate section */
+.eval-label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #ccc;
+    margin-bottom: 4px;
+}
+
+.eval-flag-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+@media (max-width: 500px) {
+    .eval-flag-fields { grid-template-columns: 1fr; }
+}
+
+button.eval-reset-btn {
+    padding: 2px 8px;
+    background: none;
+    border: 1px solid var(--code-border);
+    border-radius: 4px;
+    color: #888;
+    font-size: 0.72rem;
+    cursor: pointer;
+    font-family: inherit;
+    line-height: 1.2;
+    width: auto;
+    margin: 0;
+}
+
+button.eval-reset-btn:hover {
+    background: rgba(255,255,255,0.06);
+    color: #ccc;
+    transform: none;
+}
+
+.eval-flag-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+select.eval-select, input.eval-input {
+    font-family: 'SF Mono', Monaco, monospace;
+    font-size: 0.78rem;
+    background: var(--code-bg);
+    color: #ccc;
+    border: 1px solid var(--code-border);
+    border-radius: 4px;
+    padding: 6px 8px;
+    height: auto;
+    width: 100%;
+    line-height: 1.4;
+    margin: 0 0 4px;
+}
+
+select.eval-select {
+    cursor: pointer;
+    flex: 1;
+}
+
+select.eval-select option {
+    background: var(--code-bg);
+    color: #ccc;
+}
+
+.eval-value-hint {
+    display: block;
+    color: #555;
+    margin-top: -2px;
+    margin-bottom: 2px;
+}
+
+textarea.eval-editor {
+    width: 100%;
+    height: auto;
+    min-height: 120px;
+    background: var(--code-bg);
+    color: #ccc;
+    border: 1px solid var(--code-border);
+    border-radius: 6px;
+    padding: 10px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Courier New', monospace;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    resize: vertical;
+    tab-size: 2;
+}
+
+textarea.eval-editor:focus {
+    outline: 1px solid var(--brand-start);
+    border-color: var(--brand-start);
+}
+
+.eval-status {
+    font-size: 0.82rem;
+    color: #4CAF50;
+    font-weight: 500;
+}
+
+.eval-status.error {
+    color: #f44336;
+}
+
+/* Log output */
+#log {
+    background: #1a1a2e;
+    color: #4CAF50;
+    font-family: 'SF Mono', Monaco, monospace;
+    font-size: 0.78rem;
+    padding: 12px;
+    border-radius: 6px;
+    min-height: 80px;
+    max-height: 250px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+}

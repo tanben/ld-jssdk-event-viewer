@@ -5,100 +5,166 @@
  * LaunchDarkly SDK network traffic. This replaces the Chrome extension's
  * chrome.devtools.network.onRequestFinished API.
  *
- * Emits events via a global event bus: window.__ldEventBus
+ * Emits events via the LDJSSDK.bus event bus.
  */
 (function () {
   'use strict';
 
-  if (window.__ldInterceptorsInstalled) return;
-  window.__ldInterceptorsInstalled = true;
+  // ----------------------------------------------------------------
+  // LDJSSDK namespace setup
+  // ----------------------------------------------------------------
+  const LDJSSDK = window.LDJSSDK = window.LDJSSDK || {};
+
+  if (LDJSSDK.interceptorsInstalled) return;
+  LDJSSDK.interceptorsInstalled = true;
 
   // ----------------------------------------------------------------
-  // Event bus – lightweight pub/sub for inter-module communication
+  // URL pattern constants
   // ----------------------------------------------------------------
-  var bus = window.__ldEventBus = window.__ldEventBus || {
+  const LD_DOMAINS = ['launchdarkly.com', 'launchdarkly.us'];
+  const EVAL_PATH = '/sdk/eval';
+  const EVENTS_BULK_PATH = '/events/bulk';
+  const GOALS_PATH = '/goals/';
+  const STREAM_PATH = 'clientstream';
+  const CLIENT_ID_OFFSET_FROM_END = 3;
+
+  // ----------------------------------------------------------------
+  // Event bus — lightweight pub/sub for inter-module communication
+  // ----------------------------------------------------------------
+  const bus = LDJSSDK.bus = LDJSSDK.bus || {
     _handlers: {},
-    on: function (evt, fn) {
-      (this._handlers[evt] = this._handlers[evt] || []).push(fn);
+    on(event, handler) {
+      (this._handlers[event] = this._handlers[event] || []).push(handler);
     },
-    emit: function (evt, data) {
-      (this._handlers[evt] || []).forEach(function (fn) { fn(data); });
+    off(event, handler) {
+      const handlers = this._handlers[event];
+      if (!handlers) return;
+      this._handlers[event] = handlers.filter(h => h !== handler);
+    },
+    emit(event, data) {
+      const handlers = this._handlers[event] || [];
+      for (const handler of handlers) {
+        try {
+          handler(data);
+        } catch (error) {
+          console.warn('[LD Event Viewer] Error in event handler:', event, error);
+        }
+      }
     }
   };
 
   // ----------------------------------------------------------------
-  // Helpers (inline copies of URL parsers from panel.js)
+  // URL helpers
   // ----------------------------------------------------------------
   function isLDUrl(url) {
-    return url && (url.includes('launchdarkly.com') || url.includes('launchdarkly.us'));
+    if (!url) return false;
+    return LD_DOMAINS.some(domain => url.includes(domain));
   }
+
   function parseContextHashFromUrl(url) {
-    var parts = url.split('/');
-    var last = parts[parts.length - 1] || '';
-    return last.split('?')[0] || null;
+    const segments = url.split('/');
+    const lastSegment = segments[segments.length - 1] || '';
+    return lastSegment.split('?')[0] || '';
   }
+
   function parseClientIDFromUrl(url) {
-    var parts = url.split('/');
-    parts.splice(1, 1);
-    return parts[parts.length - 3];
+    const segments = url.split('/');
+    segments.splice(1, 1);
+    return segments[segments.length - CLIENT_ID_OFFSET_FROM_END];
   }
+
   function parseUrlForContext(url) {
     try {
-      var hash = parseContextHashFromUrl(url);
+      const hash = parseContextHashFromUrl(url);
       return JSON.parse(atob(hash));
-    } catch (e) { return {}; }
+    } catch (error) {
+      console.warn('[LD Event Viewer] Failed to parse context from URL:', error.message);
+      return {};
+    }
   }
-  function ts() {
+
+  function timestamp() {
     return new Date().toISOString().replace('T', ' ').substring(0, 19);
+  }
+
+  // ----------------------------------------------------------------
+  // Shared response handler (DRY for fetch and XHR)
+  // ----------------------------------------------------------------
+  function handleLDResponse({ url, method, getResponseText, getPostBody }) {
+    // sdk/eval — flag evaluations (GET responses)
+    if (url.includes(EVAL_PATH) && method === 'GET') {
+      const responseText = getResponseText();
+      if (responseText && typeof responseText.then === 'function') {
+        responseText.then(body => emitEvalEvent(url, body));
+      } else if (responseText) {
+        emitEvalEvent(url, responseText);
+      }
+    }
+
+    // events/bulk — sent events (POST)
+    if (url.includes(EVENTS_BULK_PATH) && method === 'POST') {
+      const postBody = getPostBody();
+      if (postBody) {
+        bus.emit('sent', { url, body: postBody, timestamp: timestamp() });
+      }
+    }
+
+    // goals — experiment goals
+    if (url.includes(GOALS_PATH) && method === 'GET') {
+      const responseText = getResponseText();
+      if (responseText && typeof responseText.then === 'function') {
+        responseText.then(body => emitGoalsEvent(url, body));
+      } else if (responseText) {
+        emitGoalsEvent(url, responseText);
+      }
+    }
+  }
+
+  function emitEvalEvent(url, body) {
+    if (!body) return;
+    try {
+      const data = JSON.parse(body);
+      if (data && Object.keys(data).length > 0) {
+        bus.emit('eval', { url, data, bodyLength: body.length, timestamp: timestamp() });
+      }
+    } catch (error) {
+      console.warn('[LD Event Viewer] Failed to parse eval response:', error.message);
+    }
+  }
+
+  function emitGoalsEvent(url, body) {
+    if (!body) return;
+    try {
+      bus.emit('goals', { url, data: JSON.parse(body), timestamp: timestamp() });
+    } catch (error) {
+      console.warn('[LD Event Viewer] Failed to parse goals response:', error.message);
+    }
   }
 
   // ----------------------------------------------------------------
   // fetch monkey-patch
   // ----------------------------------------------------------------
-  var originalFetch = window.fetch;
-  window.fetch = function () {
-    var args = arguments;
-    var input = args[0];
-    var init = args[1] || {};
-    var url = typeof input === 'string' ? input : (input && input.url ? input.url : '');
-    var method = (init.method || (input && typeof input !== 'string' && input.method) || 'GET').toUpperCase();
+  const originalFetch = window.fetch;
+  window.fetch = function (...args) {
+    const [input, init = {}] = args;
+    const url = typeof input === 'string' ? input : (input?.url ?? '');
+    const method = (init.method || (typeof input !== 'string' && input?.method) || 'GET').toUpperCase();
 
     if (!isLDUrl(url)) return originalFetch.apply(this, args);
 
     // Capture POST body before it's consumed
-    var postBody = init.body || (input && typeof input !== 'string' && input.body) || null;
-    var postBodyText = typeof postBody === 'string' ? postBody : null;
+    const postBody = init.body || (typeof input !== 'string' && input?.body);
+    const postBodyText = typeof postBody === 'string' ? postBody : undefined;
 
-    return originalFetch.apply(this, args).then(function (response) {
-      var clone = response.clone();
+    return originalFetch.apply(this, args).then(response => {
+      const clone = response.clone();
 
-      // sdk/eval → flag evaluations (GET responses)
-      if (url.includes('/sdk/eval') && method === 'GET') {
-        clone.text().then(function (body) {
-          if (!body) return;
-          try {
-            var data = JSON.parse(body);
-            if (data && Object.keys(data).length > 0) {
-              bus.emit('eval', { url: url, data: data, bodyLength: body.length, timestamp: ts() });
-            }
-          } catch (e) { /* ignore */ }
-        });
-      }
-
-      // events/bulk → sent events (POST)
-      if (url.includes('/events/bulk') && method === 'POST' && postBodyText) {
-        bus.emit('sent', { url: url, body: postBodyText, timestamp: ts() });
-      }
-
-      // goals → experiment goals
-      if (url.includes('/goals/') && method === 'GET') {
-        clone.text().then(function (body) {
-          if (!body) return;
-          try {
-            bus.emit('goals', { url: url, data: JSON.parse(body), timestamp: ts() });
-          } catch (e) { /* ignore */ }
-        });
-      }
+      handleLDResponse({
+        url,
+        method,
+        getResponseText: () => clone.text(),
+        getPostBody: () => postBodyText,
+      });
 
       return response;
     });
@@ -107,72 +173,69 @@
   // ----------------------------------------------------------------
   // XMLHttpRequest monkey-patch
   // ----------------------------------------------------------------
-  var OrigXHR = window.XMLHttpRequest;
-  var xhrOpen = OrigXHR.prototype.open;
-  var xhrSend = OrigXHR.prototype.send;
+  const OriginalXHR = window.XMLHttpRequest;
+  const originalOpen = OriginalXHR.prototype.open;
+  const originalSend = OriginalXHR.prototype.send;
 
-  OrigXHR.prototype.open = function (method, url) {
-    this.__ldMethod = (method || 'GET').toUpperCase();
-    this.__ldUrl = url;
-    return xhrOpen.apply(this, arguments);
+  OriginalXHR.prototype.open = function (method, url, ...rest) {
+    this._ldMethod = (method || 'GET').toUpperCase();
+    this._ldUrl = url;
+    return originalOpen.call(this, method, url, ...rest);
   };
 
-  OrigXHR.prototype.send = function (body) {
-    var self = this;
-    if (self.__ldUrl && isLDUrl(self.__ldUrl)) {
-      self.__ldBody = typeof body === 'string' ? body : null;
-      self.addEventListener('load', function () {
+  OriginalXHR.prototype.send = function (body) {
+    if (this._ldUrl && isLDUrl(this._ldUrl)) {
+      const postBodyText = typeof body === 'string' ? body : undefined;
+
+      this.addEventListener('load', () => {
         try {
-          var url = self.__ldUrl;
-          var method = self.__ldMethod;
-          var responseText = self.responseText;
-
-          if (url.includes('/sdk/eval') && method === 'GET' && responseText) {
-            var data = JSON.parse(responseText);
-            if (data && Object.keys(data).length > 0) {
-              bus.emit('eval', { url: url, data: data, bodyLength: responseText.length, timestamp: ts() });
-            }
-          }
-
-          if (url.includes('/events/bulk') && method === 'POST' && self.__ldBody) {
-            bus.emit('sent', { url: url, body: self.__ldBody, timestamp: ts() });
-          }
-
-          if (url.includes('/goals/') && method === 'GET' && responseText) {
-            bus.emit('goals', { url: url, data: JSON.parse(responseText), timestamp: ts() });
-          }
-        } catch (e) { /* ignore */ }
+          handleLDResponse({
+            url: this._ldUrl,
+            method: this._ldMethod,
+            getResponseText: () => this.responseText,
+            getPostBody: () => postBodyText,
+          });
+        } catch (error) {
+          console.warn('[LD Event Viewer] XHR handler error:', error.message);
+        }
       });
     }
-    return xhrSend.apply(this, arguments);
+    return originalSend.apply(this, arguments);
   };
 
   // ----------------------------------------------------------------
   // EventSource monkey-patch (SSE stream connections)
   // ----------------------------------------------------------------
-  var OriginalEventSource = window.EventSource;
+  const OriginalEventSource = window.EventSource;
   if (OriginalEventSource) {
     window.EventSource = function (url, config) {
-      var es = new OriginalEventSource(url, config);
-      if (url && url.includes('clientstream') && isLDUrl(url)) {
-        var hash = parseContextHashFromUrl(url);
+      const eventSource = new OriginalEventSource(url, config);
+
+      if (url && url.includes(STREAM_PATH) && isLDUrl(url)) {
+        const contextHash = parseContextHashFromUrl(url);
         bus.emit('stream:open', {
-          url: url,
-          hash: hash,
+          url,
+          hash: contextHash,
           clientId: parseClientIDFromUrl(url),
           context: parseUrlForContext(url),
-          timestamp: ts(),
-          eventSource: es
+          timestamp: timestamp(),
+          eventSource,
         });
 
         // Track individual SSE events
-        ['put', 'patch', 'ping'].forEach(function (evtName) {
-          es.addEventListener(evtName, function () {
-            bus.emit('stream:event', { hash: hash, type: evtName, timestamp: ts() });
+        const sseEventTypes = ['put', 'patch', 'ping'];
+        for (const eventType of sseEventTypes) {
+          eventSource.addEventListener(eventType, () => {
+            bus.emit('stream:event', {
+              hash: contextHash,
+              type: eventType,
+              timestamp: timestamp(),
+            });
           });
-        });
+        }
       }
-      return es;
+
+      return eventSource;
     };
     window.EventSource.prototype = OriginalEventSource.prototype;
     window.EventSource.CONNECTING = OriginalEventSource.CONNECTING;

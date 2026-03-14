@@ -1,0 +1,107 @@
+/*
+ * Bookmarklet overrides for the LD SDK Event Viewer.
+ *
+ * Loaded into the Shadow DOM alongside the extension's mystyle.css.
+ * Provides the panel chrome (header, draggable, close/minimize) and
+ * adjusts spacing for the narrower overlay panel.
+ *
+ * Uses CSS custom properties from mystyle.css (:host scope).
+ */
+
+/* ================================================================
+   Shadow DOM reset
+   ================================================================ */
+:host {
+    all: initial;
+    font-family: var(--ld-font-system);
+    font-size: var(--ld-font-lg);
+    color: var(--ld-color-text);
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+/* ================================================================
+   Panel chrome
+   ================================================================ */
+.ld-viewer-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--ld-color-bg);
+    border-left: 1px solid var(--ld-color-border-input);
+    box-shadow: -4px 0 20px rgba(0,0,0,0.12);
+}
+
+.panel-header {
+    background: var(--ld-gradient-panel-header);
+    color: #fff;
+    padding: 10px var(--ld-space-lg);
+    cursor: move;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.panel-title-row {
+    display: flex;
+    align-items: center;
+    gap: var(--ld-space-md);
+}
+
+.panel-title-row h1 {
+    flex: 1;
+    font-size: var(--ld-font-2xl);
+    margin: 0;
+    color: #fff;
+    font-weight: 600;
+}
+
+.panel-control-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: var(--ld-radius-md);
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background var(--ld-transition-fast);
+}
+
+.panel-control-btn:hover {
+    background: rgba(255,255,255,0.25);
+}
+
+.panel-control-btn.close:hover {
+    background: var(--ld-color-error);
+}
+
+.panel-header .action-buttons {
+    display: flex;
+    gap: var(--ld-space-md);
+    margin-top: var(--ld-space-md);
+}
+
+/* ================================================================
+   Panel body (scrollable content area)
+   ================================================================ */
+.panel-body {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 10px;
+}
+
+/* ================================================================
+   Toast container — inside shadow DOM, positioned relative to panel
+   ================================================================ */
+#toast-container {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+}

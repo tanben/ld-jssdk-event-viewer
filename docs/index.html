@@ -1,109 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LD SDK Event Viewer</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f0f23; color: #e0e0e0; line-height: 1.6; }
-    .wrap { max-width: 740px; margin: 0 auto; padding: 0 24px 60px; }
-
-    /* Hero */
-    .hero {
-      padding: 52px 0 36px;
-      text-align: center;
-    }
-    .hero h1 {
-      font-size: 2.2rem; color: #fff; margin-bottom: 12px;
-      line-height: 1.2; letter-spacing: -0.02em;
-    }
-    .hero h1 span {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .hero .tagline {
-      color: #999; font-size: 1.05rem; max-width: 520px;
-      margin: 0 auto 20px; line-height: 1.5;
-    }
-    .hero-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-    .hero-btn {
-      display: inline-block; padding: 10px 22px; border-radius: 6px;
-      font-weight: 600; font-size: 0.9rem; text-decoration: none;
-      transition: transform 0.1s, box-shadow 0.15s;
-    }
-    .hero-btn:hover { transform: translateY(-1px); text-decoration: none; }
-    .hero-btn.primary {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: #fff; box-shadow: 0 2px 12px rgba(102,126,234,0.3);
-    }
-    .hero-btn.primary:hover { box-shadow: 0 4px 20px rgba(102,126,234,0.4); }
-    .hero-btn.secondary {
-      background: rgba(255,255,255,0.06); border: 1px solid #2a2a4a;
-      color: #ccc;
-    }
-    .hero-btn.secondary:hover { background: rgba(255,255,255,0.1); color: #fff; }
-
-    h1 { font-size: 1.8rem; color: #fff; margin-bottom: 6px; }
-    h2 { font-size: 1.25rem; color: #fff; margin: 36px 0 12px; scroll-margin-top: 24px; position: relative; }
-    h2 .anchor { position: absolute; left: -1.3em; top: 0; opacity: 0; transition: opacity .15s; color: #667eea; text-decoration: none; font-weight: 400; cursor: pointer; }
-    h2:hover .anchor { opacity: 0.6; }
-    h2 .anchor:hover { opacity: 1; }
-    h3 { font-size: 1.05rem; color: #ddd; margin: 20px 0 8px; }
-    p { margin-bottom: 10px; color: #ccc; }
-    a { color: #667eea; }
-    a:hover { text-decoration: underline; }
-
-    code { font-family: 'SF Mono', Monaco, 'Courier New', monospace; background: #16213e; padding: 2px 6px; border-radius: 3px; font-size: 0.88em; color: #ccc; }
-    pre { background: #16213e; border: 1px solid #2a2a4a; border-radius: 6px; padding: 14px; overflow-x: auto; margin: 10px 0 16px; font-size: 0.82rem; line-height: 1.5; position: relative; }
-    pre code { background: none; padding: 0; }
-
-
-    /* Feature grid */
-    .features { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; list-style: none; padding: 0; margin: 0 0 6px; }
-    @media (max-width: 560px) { .features { grid-template-columns: 1fr; } }
-    .features li { display: flex; align-items: flex-start; gap: 8px; padding: 7px 10px; background: #16213e; border-radius: 5px; font-size: 0.88rem; color: #ccc; }
-    .features li::before { content: '\2713'; color: #4CAF50; font-weight: bold; flex-shrink: 0; }
-
-    /* Tabs */
-    .tabs { display: flex; gap: 0; margin-top: 36px; border-bottom: 2px solid #2a2a4a; }
-    .tab-btn { padding: 10px 24px; background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -2px; color: #888; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: color .15s, border-color .15s; font-family: inherit; }
-    .tab-btn:hover { color: #ccc; }
-    .tab-btn.active { color: #fff; border-bottom-color: #667eea; }
-    .tab-panel { display: none; padding-top: 4px; }
-    .tab-panel.active { display: block; }
-
-    /* Steps */
-    ol.steps { counter-reset: step; list-style: none; padding: 0; margin: 8px 0 12px; }
-    ol.steps li { counter-increment: step; display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-start; }
-    ol.steps li::before { content: counter(step); display: flex; align-items: center; justify-content: center; min-width: 26px; height: 26px; background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; border-radius: 50%; font-size: 0.78rem; font-weight: 700; flex-shrink: 0; }
-
-    /* Bookmarklet drag button */
-    .bm-btn { display: inline-block; padding: 10px 24px; background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; border-radius: 6px; font-weight: 600; text-decoration: none; cursor: grab; margin: 8px 0; }
-    .bm-btn:hover { text-decoration: none; }
-
-    .hint { font-size: 0.82rem; color: #666; margin-bottom: 10px; }
-
-
-
-    .copy-row { display: flex; gap: 8px; margin: 8px 0; }
-    .copy-row input { flex: 1; font-family: 'SF Mono', Monaco, monospace; font-size: 0.78rem; background: #16213e; color: #ccc; border: 1px solid #2a2a4a; border-radius: 5px; padding: 8px 10px; }
-    .copy-btn { padding: 8px 14px; background: #667eea; color: #fff; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; font-size: 0.82rem; white-space: nowrap; }
-    .copy-btn:hover { background: #764ba2; }
-
-    .pre-copy { position: absolute; top: 8px; right: 8px; padding: 3px 8px; background: rgba(255,255,255,0.08); border: 1px solid #2a2a4a; border-radius: 4px; color: #888; font-size: 0.72rem; cursor: pointer; font-family: inherit; }
-    .pre-copy:hover { background: rgba(255,255,255,0.15); color: #ccc; }
-
-    .note { background: rgba(255,152,0,0.1); border: 1px solid rgba(255,152,0,0.3); border-radius: 6px; padding: 12px 14px; color: #ffb74d; font-size: 0.85rem; margin: 14px 0; }
-
-    hr { border: none; border-top: 1px solid #2a2a4a; margin: 36px 0; }
-
-    footer { text-align: center; color: #666; font-size: 0.8rem; padding-top: 24px; }
-  </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.classless.min.css">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div class="wrap">
 
   <div class="hero">
     <h1>LaunchDarkly <span>SDK Event Viewer</span></h1>
@@ -137,7 +41,7 @@
     <button class="tab-btn" data-tab="bookmarklet">Bookmarklet</button>
   </div>
 
-  <!-- ── Extension tab ── -->
+  <!-- Extension tab -->
   <div class="tab-panel active" id="tab-extension">
     <h3>Install</h3>
     <p>The extension adds a <strong>LaunchPad</strong> panel to Chrome DevTools. It uses the DevTools Network API, so it captures requests with full HAR timing, response sizes, and headers &mdash; no monkey-patching needed.</p>
@@ -150,7 +54,7 @@
     <p>The extension works immediately on the current page &mdash; no reload required. It sees every request the SDK makes, including those that already happened before you opened the panel.</p>
   </div>
 
-  <!-- ── Bookmarklet tab ── -->
+  <!-- Bookmarklet tab -->
   <div class="tab-panel" id="tab-bookmarklet">
     <h3>About</h3>
     <p>The bookmarklet injects an event viewer panel directly into any page. It works in Chrome, Firefox, Safari, and Edge &mdash; no extension install needed. It intercepts LD SDK traffic by monkey-patching <code>fetch</code>, <code>XMLHttpRequest</code>, and <code>EventSource</code>, and renders its UI in a Shadow DOM so it won't interfere with the host page's styles.</p>
@@ -187,7 +91,7 @@
 
     <h3>Removing</h3>
     <p>To remove the viewer from the current page, run in the console:</p>
-    <pre id="preRemove"><code>__ldEventViewerRemove()</code><button class="pre-copy" onclick="copyPre('preRemove',this)">Copy</button></pre>
+    <pre id="preRemove"><code>LDJSSDK.remove()</code><button class="pre-copy" onclick="copyPre('preRemove',this)">Copy</button></pre>
   </div>
 
   <hr>
@@ -195,68 +99,6 @@
     <a href="https://github.com/tanben/ld-jssdk-event-viewer">Source &amp; docs on GitHub.</a>
   </footer>
 
-</div>
-<script>
-(function () {
-  // ── Dynamic URLs ──
-  var base = window.location.origin +
-    window.location.pathname.replace(/\/index\.html$/, '').replace(/\/$/, '') +
-    '/dist/v1';
-
-  var bmCode = "javascript:void(function(){var s=document.createElement('script');s.src='" + base + "/loader.js';(document.head||document.documentElement).appendChild(s)})()";
-  document.getElementById('bm').href = bmCode;
-  document.getElementById('bmUrl').value = bmCode;
-
-  document.getElementById('scriptSnippet').textContent =
-    '<script src="' + base + '/loader.js"><\/script>';
-
-  // ── Tabs ──
-  var btns = document.querySelectorAll('.tab-btn');
-  var panels = document.querySelectorAll('.tab-panel');
-
-  function activate(tabId) {
-    btns.forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-tab') === tabId); });
-    panels.forEach(function (p) { p.classList.toggle('active', p.id === 'tab-' + tabId); });
-  }
-
-  btns.forEach(function (b) {
-    b.addEventListener('click', function () {
-      var tab = b.getAttribute('data-tab');
-      activate(tab);
-      if (tab === 'bookmarklet') {
-        history.replaceState(null, '', '#bookmarklet');
-      } else {
-        history.replaceState(null, '', window.location.pathname);
-      }
-    });
-  });
-
-  // Auto-select bookmarklet tab when linked via #bookmarklet
-  if (window.location.hash === '#bookmarklet') {
-    activate('bookmarklet');
-  }
-  window.addEventListener('hashchange', function () {
-    if (window.location.hash === '#bookmarklet') activate('bookmarklet');
-    else activate('extension');
-  });
-})();
-
-function copy(inputId, btn) {
-  var el = document.getElementById(inputId);
-  el.select();
-  navigator.clipboard.writeText(el.value).then(function () {
-    btn.textContent = 'Copied!';
-    setTimeout(function () { btn.textContent = 'Copy'; }, 1500);
-  });
-}
-
-function copyPre(preId, btn) {
-  var code = document.getElementById(preId).querySelector('code');
-  navigator.clipboard.writeText(code.textContent).then(function () {
-    btn.textContent = 'Copied!';
-    setTimeout(function () { btn.textContent = 'Copy'; }, 1500);
-  });
-}
-</script>
+<script src="main.js" defer></script>
 </body>
 </html>

@@ -25,8 +25,12 @@ mkdir -p "${DIST_DIR}"
 cp panel.js "${DIST_DIR}/panel.js" && chmod 644 "${DIST_DIR}/panel.js"
 echo "    panel.js (extension)"
 
+# Copy shared extension stylesheet (hot-linked by bookmarklet Shadow DOM)
+cp mystyle.css "${DIST_DIR}/mystyle.css" && chmod 644 "${DIST_DIR}/mystyle.css"
+echo "    mystyle.css (extension)"
+
 # Copy bookmarklet modules
-for f in loader.js interceptors.js panel-html.js bookmarklet-init.js bookmarklet.css; do
+for f in loader.js interceptors.js panel-html.js bookmarklet.js bookmarklet-overrides.css; do
   cp "${SRC_DIR}/${f}" "${DIST_DIR}/${f}" && chmod 644 "${DIST_DIR}/${f}"
   echo "    ${f}"
 done

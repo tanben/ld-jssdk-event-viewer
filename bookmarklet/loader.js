@@ -10,38 +10,49 @@
  *    requests.
  *
  * 2. Script tag (<script src="loader.js">):
- *    Add to your HTML during development. Since the tag loads before the SDK,
+ *    Add to your HTML during development. Since the tag loads with the page,
  *    all requests are captured automatically — no reload needed.
  *
  * To remove the viewer from the page, call:
- *    __ldEventViewerRemove()
+ *    LDJSSDK.remove()
+ *
+ * Module load order (sequential, each depends on the previous):
+ *   1. interceptors.js   — event bus + fetch/XHR/EventSource patches
+ *   2. HTM (CDN)         — tagged template library (sets self.htm)
+ *   3. panel-html.js     — HTML templates (needs htm)
+ *   4. panel.js          — extension panel logic (needs DOM)
+ *   5. bookmarklet.js    — wires everything together (needs all above)
  */
-(function () {
+(async function () {
   'use strict';
 
+  const LDJSSDK = window.LDJSSDK = window.LDJSSDK || {};
+
   // Toggle visibility if already loaded
-  if (window.__ldEventViewerActive) {
-    var el = document.getElementById('ld-event-viewer-root');
-    if (el) el.style.display = el.style.display === 'none' ? '' : 'none';
+  if (LDJSSDK.active) {
+    const element = document.getElementById('ld-event-viewer-root');
+    if (element) {
+      element.style.display = element.style.display === 'none' ? '' : 'none';
+    }
     return;
   }
 
   // ----------------------------------------------------------------
   // Resolve base URL
   // ----------------------------------------------------------------
-  var baseUrl = '';
+  let baseUrl = '';
 
-  var scripts = document.querySelectorAll('script[src]');
-  for (var i = scripts.length - 1; i >= 0; i--) {
-    var src = scripts[i].src;
-    if (src.indexOf('loader.js') !== -1) {
+  const scripts = document.querySelectorAll('script[src]');
+  for (let i = scripts.length - 1; i >= 0; i--) {
+    const src = scripts[i].src;
+    if (src.includes('loader.js')) {
       baseUrl = src.replace(/\/loader\.js.*$/, '');
       break;
     }
   }
 
-  if (!baseUrl && window.__ldEventViewerBase) {
-    baseUrl = window.__ldEventViewerBase;
+  if (!baseUrl && LDJSSDK.baseUrl) {
+    baseUrl = LDJSSDK.baseUrl;
   }
 
   if (!baseUrl) {
@@ -49,45 +60,45 @@
     return;
   }
 
-  // Global to remove the viewer
-  window.__ldEventViewerRemove = function () {
-    var root = document.getElementById('ld-event-viewer-root');
-    if (root) root.remove();
-    window.__ldEventViewerActive = false;
-    console.log('[LD Event Viewer] Removed.');
-  };
-
   // ----------------------------------------------------------------
-  // Load modules
+  // Script loader
   // ----------------------------------------------------------------
   function loadScript(url) {
-    return new Promise(function (resolve, reject) {
-      var s = document.createElement('script');
-      s.src = url;
-      s.onload = resolve;
-      s.onerror = function () { reject(new Error('Failed to load: ' + url)); };
-      (document.head || document.documentElement).appendChild(s);
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = url;
+      script.onload = resolve;
+      script.onerror = () => reject(new Error(`Failed to load: ${url}`));
+      (document.head || document.documentElement).appendChild(script);
     });
   }
 
-  var modules = [
-    baseUrl + '/interceptors.js',
-    baseUrl + '/panel-html.js',
-    baseUrl + '/panel.js',
-    baseUrl + '/bookmarklet-init.js'
+  // ----------------------------------------------------------------
+  // CSS URLs for the bookmarklet panel (passed to LDJSSDK.init)
+  // ----------------------------------------------------------------
+  const cssUrls = [
+    baseUrl + '/mystyle.css',
+    baseUrl + '/bookmarklet-overrides.css',
   ];
 
-  var cssUrl = baseUrl + '/bookmarklet.css';
+  // ----------------------------------------------------------------
+  // Load modules sequentially (each depends on the previous)
+  // ----------------------------------------------------------------
+  const HTM_CDN_URL = 'https://unpkg.com/htm@3/dist/htm.js';
 
-  modules.reduce(function (chain, url) {
-    return chain.then(function () { return loadScript(url); });
-  }, Promise.resolve()).then(function () {
-    if (typeof window.__ldEventViewerInit === 'function') {
-      window.__ldEventViewerInit(cssUrl);
+  try {
+    await loadScript(baseUrl + '/interceptors.js');
+    await loadScript(HTM_CDN_URL);
+    await loadScript(baseUrl + '/panel-html.js');
+    await loadScript(baseUrl + '/panel.js');
+    await loadScript(baseUrl + '/bookmarklet.js');
+
+    if (typeof LDJSSDK.init === 'function') {
+      LDJSSDK.init(cssUrls);
     } else {
       console.error('[LD Event Viewer] Init function not found.');
     }
-  }).catch(function (err) {
-    console.error('[LD Event Viewer] Failed to load:', err);
-  });
+  } catch (error) {
+    console.error('[LD Event Viewer] Failed to load:', error);
+  }
 })();
