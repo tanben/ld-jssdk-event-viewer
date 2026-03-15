@@ -62,14 +62,36 @@
   // ================================================================
   // Launch the bookmarklet
   // ================================================================
+  function setDemoLayout(panelVisible) {
+    if (panelVisible) {
+      document.body.style.maxWidth = 'calc(100vw - 500px)';
+      document.body.style.margin = '0 0 0 10px';
+    } else {
+      document.body.style.maxWidth = '';
+      document.body.style.margin = '';
+    }
+  }
+
   document.getElementById('launchBtn').addEventListener('click', () => {
+    const existing = document.getElementById('ld-event-viewer-root');
+    if (existing) {
+      // Toggle: loader.js will flip display, we just need to react
+      const willShow = existing.style.display === 'none';
+      setDemoLayout(willShow);
+    } else {
+      setDemoLayout(true);
+    }
     const s = document.createElement('script');
     s.src = base + '/loader.js';
     (document.head || document.documentElement).appendChild(s);
     log('Loaded bookmarklet from ' + base);
-    document.body.style.maxWidth = 'calc(100vw - 500px)';
-    document.body.style.margin = '0 0 0 10px';
   });
+
+  // Watch for the viewer being closed/hidden externally (close button, LDJSSDK.remove)
+  new MutationObserver(() => {
+    const root = document.getElementById('ld-event-viewer-root');
+    setDemoLayout(root && root.style.display !== 'none');
+  }).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] });
 
   // ================================================================
   // Panel toggle — clicking a toggle button opens/closes its panel
