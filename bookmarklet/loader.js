@@ -92,6 +92,7 @@
     const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
     LDJSSDK.panelBodyHTML = bodyMatch ? bodyMatch[1].trim() : '';
 
+    await loadScript(baseUrl + '/goalTracker-mod.js');
     await loadScript(baseUrl + '/panel.js');
     await loadScript(baseUrl + '/bookmarklet.js');
 
