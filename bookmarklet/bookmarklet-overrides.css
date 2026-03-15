@@ -1,15 +1,20 @@
 /*
  * Bookmarklet overrides for the LD SDK Event Viewer.
  *
- * Loaded into <head> alongside the extension's mystyle.css.
+ * Loaded into the Shadow DOM alongside the extension's mystyle.css.
  * Provides the panel chrome (header, draggable, close/minimize) and
  * adjusts spacing for the narrower overlay panel.
  */
 
 /* ================================================================
-   Base reset for panel content
+   Shadow DOM host reset
    ================================================================ */
-#ld-event-viewer-root *, #ld-event-viewer-root *::before, #ld-event-viewer-root *::after {
+:host {
+    all: initial;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+*, *::before, *::after {
     box-sizing: border-box;
 }
 

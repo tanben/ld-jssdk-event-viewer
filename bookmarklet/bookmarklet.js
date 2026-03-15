@@ -2,10 +2,12 @@
  * Bookmarklet entry point — wires the event bus to the extension's
  * panel.js via window.LDPanel, injected as a fixed-position overlay.
  *
- * CSS is loaded into <head> via <link> elements — the extension's
- * mystyle.css plus a small overrides file for bookmarklet-specific
- * panel chrome. The panel HTML is fetched from panel.html (the same
- * file the extension uses) by loader.js.
+ * Uses Shadow DOM to isolate the panel's CSS from the host page.
+ * panel.js uses document.querySelector / document.getElementById
+ * throughout, so we temporarily patch those methods to search the
+ * shadow root first while panel.js initializes — and leave the
+ * patches in place so ongoing handler calls (handleEval, etc.)
+ * also find elements inside the shadow.
  *
  * data-action pattern:
  *   Interactive elements use data-action="event->handlerName" attributes.
@@ -61,7 +63,7 @@
   }
 
   // ================================================================
-  // Host element — fixed-position overlay
+  // Host element + Shadow DOM
   // ================================================================
   const host = document.createElement('div');
   host.id = 'ld-event-viewer-root';
@@ -73,27 +75,57 @@
   ].join(';') + ';';
   document.documentElement.appendChild(host);
 
-  // Track CSS links so we can remove them on cleanup
-  const cssLinks = [];
+  const shadow = host.attachShadow({ mode: 'open' });
 
   // ================================================================
-  // Load CSS into <head>
+  // Patch document query methods to search shadow root first.
+  // panel.js uses document.querySelector, document.getElementById,
+  // and document.querySelectorAll extensively — these patches let
+  // it find elements inside the shadow without any changes.
+  // ================================================================
+  const _getElementById = document.getElementById.bind(document);
+  const _querySelector = document.querySelector.bind(document);
+  const _querySelectorAll = document.querySelectorAll.bind(document);
+
+  document.getElementById = function (id) {
+    return shadow.getElementById(id) || _getElementById(id);
+  };
+
+  document.querySelector = function (sel) {
+    try { var el = shadow.querySelector(sel); if (el) return el; } catch (e) {}
+    return _querySelector(sel);
+  };
+
+  document.querySelectorAll = function (sel) {
+    try {
+      var shadowResults = shadow.querySelectorAll(sel);
+      if (shadowResults.length > 0) return shadowResults;
+    } catch (e) {}
+    return _querySelectorAll(sel);
+  };
+
+  // Also patch window.document variants (panel.js uses window.document.querySelector)
+  if (window.document.querySelector !== document.querySelector) {
+    window.document.querySelector = document.querySelector;
+    window.document.querySelectorAll = document.querySelectorAll;
+  }
+
+  // ================================================================
+  // Load CSS into shadow root
   // ================================================================
   function loadCSS(url) {
     return new Promise((resolve, reject) => {
       const link = document.createElement('link');
       link.rel = 'stylesheet';
       link.href = url;
-      link.dataset.ldEventViewer = 'true';
       link.onload = resolve;
       link.onerror = () => reject(new Error(`Failed to load CSS: ${url}`));
-      document.head.appendChild(link);
-      cssLinks.push(link);
+      shadow.appendChild(link);
     });
   }
 
   // ================================================================
-  // Build panel DOM inside host element
+  // Build panel DOM inside shadow root
   // ================================================================
   function buildPanel() {
     const wrapper = document.createElement('div');
@@ -111,14 +143,14 @@
       '</div>' +
       '<div class="panel-body">' + panelBodyHTML + '</div>';
 
-    host.appendChild(wrapper);
+    shadow.appendChild(wrapper);
   }
 
   // ================================================================
   // Draggable panel header
   // ================================================================
   function makeDraggable() {
-    const header = host.querySelector('.panel-header');
+    const header = shadow.querySelector('.panel-header');
     if (!header) return;
 
     let isDragging = false;
@@ -169,12 +201,13 @@
   // Global remove function
   // ================================================================
   LDJSSDK.remove = function () {
+    // Restore original document methods
+    document.getElementById = _getElementById;
+    document.querySelector = _querySelector;
+    document.querySelectorAll = _querySelectorAll;
+
     const root = document.getElementById('ld-event-viewer-root');
     if (root) root.remove();
-    // Clean up CSS links from <head>
-    for (const link of cssLinks) {
-      if (link.parentNode) link.parentNode.removeChild(link);
-    }
     LDJSSDK.active = false;
     console.log('[LD Event Viewer] Removed.');
   };
@@ -188,13 +221,13 @@
       api.setupButtons();
 
       // Wire data-action handlers for bookmarklet-specific buttons
-      wireActions(host, {
+      wireActions(shadow, {
         close() {
           host.style.display = 'none';
         },
         minimize() {
-          const body = host.querySelector('.panel-body');
-          const minimizeBtn = host.querySelector('#minimizeBtn');
+          const body = shadow.querySelector('.panel-body');
+          const minimizeBtn = shadow.querySelector('#minimizeBtn');
           if (body.style.display === 'none') {
             body.style.display = '';
             host.style.height = '100vh';
@@ -212,7 +245,7 @@
       api.showToast('LD Event Viewer active \u2013 intercepting SDK traffic', 'info');
     };
 
-    // Load stylesheets, then initialize
+    // Load stylesheets into shadow root, then initialize
     const cssPromises = cssUrls.map(url =>
       loadCSS(url).catch(error => {
         console.warn('[LD Event Viewer]', error.message);
