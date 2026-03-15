@@ -1,5 +1,5 @@
 /**
- * Demo harness for the LD SDK Event Viewer (test.html).
+ * Demo page script for the LD SDK Event Viewer (demo.html).
  *
  * Provides:
  *   - Mock LD server responses (fetch intercept) for offline testing
@@ -122,9 +122,9 @@
   };
 
   const MOCK_GOALS = [
-    { kind: 'pageview', key: 'homepage-view', urls: [{ kind: 'substring', substring: 'test.html' }] },
-    { kind: 'click', key: 'signup-click', selector: '#simAll', urls: [{ kind: 'substring', substring: 'test.html' }] },
-    { kind: 'click', key: 'missing-element', selector: '#nonexistent', urls: [{ kind: 'substring', substring: 'test.html' }] },
+    { kind: 'pageview', key: 'homepage-view', urls: [{ kind: 'substring', substring: 'demo.html' }] },
+    { kind: 'click', key: 'signup-click', selector: '#simAll', urls: [{ kind: 'substring', substring: 'demo.html' }] },
+    { kind: 'click', key: 'missing-element', selector: '#nonexistent', urls: [{ kind: 'substring', substring: 'demo.html' }] },
   ];
 
   // ================================================================

@@ -385,7 +385,7 @@ button.pre-copy:hover {
 }
 
 /* ================================================================
-   Test page (test.html)
+   Demo page (demo.html)
    ================================================================ */
 .intro {
     color: #999;
@@ -503,7 +503,7 @@ button.info-toggle:hover {
 }
 
 /* ================================================================
-   Operations list (test.html) — button rows with inline panels
+   Operations list (demo.html) — button rows with inline panels
    ================================================================ */
 .ops-list {
     display: flex;
