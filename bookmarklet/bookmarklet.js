@@ -1,14 +1,10 @@
 /**
  * Bookmarklet entry point — wires the event bus to the extension's
- * panel.js via window.LDPanel, inside an isolated Shadow DOM.
+ * panel.js via window.LDPanel, injected as a fixed-position overlay.
  *
- * Shadow DOM isolation:
- *   The panel UI is rendered inside a Shadow DOM attached to a fixed-position
- *   host element. This prevents the host page's styles from affecting the
- *   viewer, and prevents the viewer's styles from leaking into the page.
- *   CSS is loaded into the shadow root via <link> elements — the extension's
- *   mystyle.css (with :host-scoped design tokens) plus a small overrides file
- *   for bookmarklet-specific panel chrome.
+ * CSS is loaded into <head> via <link> elements — the extension's
+ * mystyle.css plus a small overrides file for bookmarklet-specific
+ * panel chrome. The panel HTML lives inside a wrapper div in the page.
  *
  * data-action pattern:
  *   Interactive elements in panel-html.js use data-action="event->handlerName"
@@ -64,7 +60,7 @@
   }
 
   // ================================================================
-  // Shadow DOM host
+  // Host element — fixed-position overlay
   // ================================================================
   const host = document.createElement('div');
   host.id = 'ld-event-viewer-root';
@@ -76,37 +72,40 @@
   ].join(';') + ';';
   document.documentElement.appendChild(host);
 
-  const shadow = host.attachShadow({ mode: 'open' });
+  // Track CSS links so we can remove them on cleanup
+  const cssLinks = [];
 
   // ================================================================
-  // Load CSS into shadow DOM
+  // Load CSS into <head>
   // ================================================================
   function loadCSS(url) {
     return new Promise((resolve, reject) => {
       const link = document.createElement('link');
       link.rel = 'stylesheet';
       link.href = url;
+      link.dataset.ldEventViewer = 'true';
       link.onload = resolve;
       link.onerror = () => reject(new Error(`Failed to load CSS: ${url}`));
-      shadow.appendChild(link);
+      document.head.appendChild(link);
+      cssLinks.push(link);
     });
   }
 
   // ================================================================
-  // Build panel DOM inside shadow root
+  // Build panel DOM inside host element
   // ================================================================
   function buildPanel() {
     const wrapper = document.createElement('div');
     wrapper.className = 'ld-viewer-panel';
     wrapper.innerHTML = panelHTML();
-    shadow.appendChild(wrapper);
+    host.appendChild(wrapper);
   }
 
   // ================================================================
   // Draggable panel header
   // ================================================================
   function makeDraggable() {
-    const header = shadow.querySelector('.panel-header');
+    const header = host.querySelector('.panel-header');
     if (!header) return;
 
     let isDragging = false;
@@ -116,7 +115,6 @@
     let startTop = 0;
 
     header.addEventListener('mousedown', (event) => {
-      // Don't drag when clicking buttons
       if (event.target.tagName === 'BUTTON') return;
 
       isDragging = true;
@@ -160,6 +158,10 @@
   LDJSSDK.remove = function () {
     const root = document.getElementById('ld-event-viewer-root');
     if (root) root.remove();
+    // Clean up CSS links from <head>
+    for (const link of cssLinks) {
+      if (link.parentNode) link.parentNode.removeChild(link);
+    }
     LDJSSDK.active = false;
     console.log('[LD Event Viewer] Removed.');
   };
@@ -170,19 +172,16 @@
   LDJSSDK.init = function (cssUrls) {
     const doInit = function () {
       buildPanel();
-
-      // Point panel.js at the shadow DOM
-      api.setRoot(shadow);
       api.setupButtons();
 
       // Wire data-action handlers for bookmarklet-specific buttons
-      wireActions(shadow, {
+      wireActions(host, {
         close() {
           host.style.display = 'none';
         },
         minimize() {
-          const body = shadow.querySelector('.panel-body');
-          const minimizeBtn = shadow.querySelector('#minimizeBtn');
+          const body = host.querySelector('.panel-body');
+          const minimizeBtn = host.querySelector('#minimizeBtn');
           if (body.style.display === 'none') {
             body.style.display = '';
             host.style.height = '100vh';
@@ -200,7 +199,7 @@
       api.showToast('LD Event Viewer active \u2013 intercepting SDK traffic', 'info');
     };
 
-    // Load stylesheets into shadow DOM, then initialize
+    // Load stylesheets, then initialize
     const cssPromises = cssUrls.map(url =>
       loadCSS(url).catch(error => {
         console.warn('[LD Event Viewer]', error.message);

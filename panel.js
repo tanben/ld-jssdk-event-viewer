@@ -1,9 +1,4 @@
-// DOM root — defaults to document (extension), overridable for Shadow DOM (bookmarklet)
-var _root = document;
-function $(sel) { return _root.querySelector(sel); }
-function $$(sel) { return _root.querySelectorAll(sel); }
-
-// Goal tracking helpers (from GoalTracker.js)
+// Goal tracking helpers (inlined from goalTracker-mod.js)
 function escapeStringRegexp(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -26,13 +21,13 @@ function doesUrlMatch(matcher, href, search, hash) {
 var extensionGlobals = {
   logEditor: {
     insert: (msg) => {
-      let ele = $("textArea#networkDetails");
+      let ele = document.querySelector("textArea#networkDetails");
       ele.value += `\n`;
       ele.value += msg;
       updateEmptyState(ele);
     },
     setValue: (msg) => {
-      let ele = $("textArea#networkDetails");
+      let ele = document.querySelector("textArea#networkDetails");
       ele.value = msg;
       updateEmptyState(ele);
     },
@@ -59,7 +54,7 @@ function main() {
   chrome.devtools.network.onRequestFinished.addListener(logNetwork);
   chrome.devtools.network.onRequestFinished.addListener(eventsHandler);
   chrome.devtools.network.onNavigated.addListener(onNavHandler);
-
+  
   checkDoNotTrack();
   setupButtons();
 }
@@ -71,7 +66,7 @@ function getTimestamp() {
 
 function setupButtons() {
   // Clear button
-  const clearBtn = $('#clearBtn');
+  const clearBtn = document.getElementById('clearBtn');
   if (clearBtn) {
     clearBtn.addEventListener('click', () => {
       clearAllData();
@@ -80,7 +75,7 @@ function setupButtons() {
   }
   
   // Export button
-  const exportBtn = $('#exportBtn');
+  const exportBtn = document.getElementById('exportBtn');
   if (exportBtn) {
     exportBtn.addEventListener('click', () => {
       exportData();
@@ -103,7 +98,7 @@ function setupButtons() {
 
 // View Toggle (Raw/Formatted)
 function setupViewToggles() {
-  const toggleBtns = $$('.toggle-btn');
+  const toggleBtns = document.querySelectorAll('.toggle-btn');
   
   toggleBtns.forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -120,20 +115,20 @@ function setupViewToggles() {
       // Determine which views to toggle based on container type
       let rawView, formattedView;
       if (containerType === 'context') {
-        rawView = $("#contextRawView");
-        formattedView = $("#contextFormattedView");
+        rawView = document.getElementById('contextRawView');
+        formattedView = document.getElementById('contextFormattedView');
       } else if (containerType === 'events') {
-        rawView = $("#eventsRawView");
-        formattedView = $("#eventsFormattedView");
+        rawView = document.getElementById('eventsRawView');
+        formattedView = document.getElementById('eventsFormattedView');
       } else if (containerType === 'flagsInExperiment') {
-        rawView = $("#flagsInExperimentRawView");
-        formattedView = $("#flagsInExperimentFormattedView");
+        rawView = document.getElementById('flagsInExperimentRawView');
+        formattedView = document.getElementById('flagsInExperimentFormattedView');
       } else if (containerType === 'conversionMetrics') {
-        rawView = $("#conversionMetricsRawView");
-        formattedView = $("#conversionMetricsFormattedView");
+        rawView = document.getElementById('conversionMetricsRawView');
+        formattedView = document.getElementById('conversionMetricsFormattedView');
       } else {
-        rawView = $("#flagsRawView");
-        formattedView = $("#flagsFormattedView");
+        rawView = document.getElementById('flagsRawView');
+        formattedView = document.getElementById('flagsFormattedView');
       }
       
       const emptyState = container.querySelector('.empty-state');
@@ -161,14 +156,14 @@ function setupViewToggles() {
 
 // Event Filters
 function setupEventFilters() {
-  const filterBtns = $$('.filter-btn');
+  const filterBtns = document.querySelectorAll('.filter-btn');
   
   filterBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       const filter = btn.getAttribute('data-filter');
       
       // Update active state
-      $$('.filter-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       
       // Filter events
@@ -178,7 +173,7 @@ function setupEventFilters() {
 }
 
 function filterEvents(filter) {
-  const eventCards = $$('.event-card');
+  const eventCards = document.querySelectorAll('.event-card');
   
   eventCards.forEach(card => {
     const direction = card.getAttribute('data-direction');
@@ -204,7 +199,7 @@ function filterEvents(filter) {
 
 // Update Feature Flags Table
 function updateFeatureFlagsTable(flagsData) {
-  const tableBody = $("#featureFlagsTableBody");
+  const tableBody = document.getElementById('featureFlagsTableBody');
   if (!tableBody) return;
   
   // Clear existing rows
@@ -212,7 +207,7 @@ function updateFeatureFlagsTable(flagsData) {
   
   // Update the counter
   const flagCount = flagsData ? Object.keys(flagsData).length : 0;
-  const countBadge = $("#featureFlagsCount");
+  const countBadge = document.getElementById('featureFlagsCount');
   if (countBadge) {
     countBadge.textContent = flagCount;
     countBadge.setAttribute('data-count', flagCount);
@@ -290,7 +285,7 @@ function escapeHtml(text) {
 
 // Update Context Table
 function updateContextTable(contextData) {
-  const container = $("#contextTableContainer");
+  const container = document.getElementById('contextTableContainer');
   if (!container) return;
   
   // Clear existing content
@@ -392,7 +387,7 @@ function formatContextValue(key, value) {
 // ==================== Events Timeline Functions ====================
 
 function addEventToTimeline(eventData) {
-  const timeline = $("#eventsTimeline");
+  const timeline = document.getElementById('eventsTimeline');
   if (!timeline) return;
   
   // Store event data
@@ -414,7 +409,7 @@ function addEventToTimeline(eventData) {
 
 function applyFilterToCard(card) {
   // Get the current active filter
-  const activeFilterBtn = $('.filter-btn.active');
+  const activeFilterBtn = document.querySelector('.filter-btn.active');
   if (!activeFilterBtn) return;
   
   const filter = activeFilterBtn.getAttribute('data-filter');
@@ -437,7 +432,7 @@ function applyFilterToCard(card) {
 }
 
 function getCurrentFilter() {
-  const activeFilterBtn = $('.filter-btn.active');
+  const activeFilterBtn = document.querySelector('.filter-btn.active');
   return activeFilterBtn ? activeFilterBtn.getAttribute('data-filter') : 'all';
 }
 
@@ -457,7 +452,7 @@ function updateFilterCounters() {
   
   // Update counter elements
   const updateCount = (id, count) => {
-    const el = $('#' + id);
+    const el = document.getElementById(id);
     if (el) el.textContent = count;
   };
   
@@ -478,19 +473,19 @@ function showEventsView() {
  * Generic helper to show the active view for a section
  */
 function showSectionView(containerSelector, emptyStateId, rawViewId, formattedViewId) {
-  const emptyState = $('#' + emptyStateId);
+  const emptyState = document.getElementById(emptyStateId);
   if (emptyState) {
     emptyState.classList.add('hidden');
   }
-
-  const container = $('#' + containerSelector) || $(containerSelector);
+  
+  const container = document.getElementById(containerSelector) || document.querySelector(containerSelector);
   if (!container) return;
-
+  
   const activeToggle = container.querySelector('.toggle-btn.active');
   if (activeToggle) {
     const activeView = activeToggle.getAttribute('data-view');
-    const rawView = $('#' + rawViewId);
-    const formattedView = $('#' + formattedViewId);
+    const rawView = document.getElementById(rawViewId);
+    const formattedView = document.getElementById(formattedViewId);
     
     if (rawView && formattedView) {
       if (activeView === 'raw') {
@@ -945,7 +940,7 @@ function addSentEvents(url, events, timestamp) {
 
 // Toast Notification System
 function showToast(message, type = 'info') {
-  const container = $("#toast-container");
+  const container = document.getElementById('toast-container');
   if (!container) return;
   
   const toast = document.createElement('div');
@@ -962,7 +957,7 @@ function showToast(message, type = 'info') {
 
 // Collapsible Sections
 function setupCollapsibleSections() {
-  const headers = $$('.section-header');
+  const headers = document.querySelectorAll('.section-header');
   
   headers.forEach(header => {
     header.addEventListener('click', (e) => {
@@ -970,7 +965,7 @@ function setupCollapsibleSections() {
       if (e.target.classList.contains('copy-btn')) return;
       
       const targetId = header.getAttribute('data-target');
-      const content = $('#' + targetId);
+      const content = document.getElementById(targetId);
       
       if (content) {
         header.classList.toggle('collapsed');
@@ -982,14 +977,14 @@ function setupCollapsibleSections() {
 
 // Copy to Clipboard
 function setupCopyButtons() {
-  const copyBtns = $$('.copy-btn');
+  const copyBtns = document.querySelectorAll('.copy-btn');
   
   copyBtns.forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation(); // Prevent section collapse
       
       const targetSelector = btn.getAttribute('data-copy-target');
-      const targetEl = $(targetSelector);
+      const targetEl = document.querySelector(targetSelector);
       
       if (targetEl && targetEl.value && targetEl.value.trim()) {
         copyToClipboard(targetEl.value).then(() => {
@@ -1070,7 +1065,7 @@ function fallbackCopyToClipboard(text) {
 
 // Empty States Management
 function initializeEmptyStates() {
-  const textareas = $$('textarea');
+  const textareas = document.querySelectorAll('textarea');
   
   textareas.forEach(textarea => {
     updateEmptyState(textarea);
@@ -1086,7 +1081,7 @@ function initializeEmptyStates() {
 
 function updateEmptyState(textarea) {
   const selector = getTextareaSelector(textarea);
-  const emptyState = $(`.empty-state[data-for="${selector}"]`);
+  const emptyState = document.querySelector(`.empty-state[data-for="${selector}"]`);
   
   if (emptyState) {
     if (textarea.value && textarea.value.trim()) {
@@ -1117,15 +1112,15 @@ function clearAllData() {
   //todo: need to find a more efficient way to clear these sections maybe just rerender the container?
 
   // Clear all metric rows
-  $$(".metric").forEach((ele) => ele.remove());
+  document.querySelectorAll(".metric").forEach((ele) => ele.remove());
 
   // Reset counters
-  let typeCounters = $$("span.type-counter");
+  let typeCounters = window.document.querySelectorAll("span.type-counter");
   typeCounters.forEach((counter) => (counter.textContent = 0));
 
   // Clear all text areas
   extensionGlobals.logEditor.setValue("");
-  $$("textArea").forEach((e) => {
+  document.querySelectorAll("textArea").forEach((e) => {
     e.value = "";
     updateEmptyState(e);
   });
@@ -1134,102 +1129,102 @@ function clearAllData() {
   extensionGlobals.streamConnections.clear();
   
   // Hide optional sections
-  $("#conversionMetricsSection").style.display = 'none';
-  $("#flagsInExperimentSection").style.display = 'none';
-  $("#experimentGoals").style.display = 'none';
+  document.getElementById('conversionMetricsSection').style.display = 'none';
+  document.getElementById('flagsInExperimentSection').style.display = 'none';
+  document.getElementById('experimentGoals').style.display = 'none';
   
   // Clear feature flags table and reset views
-  const flagsTableBody = $("#featureFlagsTableBody");
+  const flagsTableBody = document.getElementById('featureFlagsTableBody');
   if (flagsTableBody) {
     flagsTableBody.innerHTML = '';
   }
   
   // Reset feature flags counter
-  const featureFlagsCount = $("#featureFlagsCount");
+  const featureFlagsCount = document.getElementById('featureFlagsCount');
   if (featureFlagsCount) {
     featureFlagsCount.textContent = '0';
     featureFlagsCount.setAttribute('data-count', '0');
   }
   
   // Show empty state and hide views for flags
-  const flagsEmptyState = $("#flagsEmptyState");
+  const flagsEmptyState = document.getElementById('flagsEmptyState');
   if (flagsEmptyState) {
     flagsEmptyState.classList.remove('hidden');
   }
-  $("#flagsRawView").style.display = 'none';
-  $("#flagsFormattedView").style.display = 'none';
+  document.getElementById('flagsRawView').style.display = 'none';
+  document.getElementById('flagsFormattedView').style.display = 'none';
   
   // Clear context table and reset views
-  const contextTableContainer = $("#contextTableContainer");
+  const contextTableContainer = document.getElementById('contextTableContainer');
   if (contextTableContainer) {
     contextTableContainer.innerHTML = '';
   }
   
   // Show empty state and hide views for context
-  const contextEmptyState = $("#contextEmptyState");
+  const contextEmptyState = document.getElementById('contextEmptyState');
   if (contextEmptyState) {
     contextEmptyState.classList.remove('hidden');
   }
-  const contextRawView = $("#contextRawView");
-  const contextFormattedView = $("#contextFormattedView");
+  const contextRawView = document.getElementById('contextRawView');
+  const contextFormattedView = document.getElementById('contextFormattedView');
   if (contextRawView) contextRawView.style.display = 'none';
   if (contextFormattedView) contextFormattedView.style.display = 'none';
   
   // Clear events timeline and reset views
-  const eventsTimeline = $("#eventsTimeline");
+  const eventsTimeline = document.getElementById('eventsTimeline');
   if (eventsTimeline) {
     eventsTimeline.innerHTML = '';
   }
   extensionGlobals.eventsData = [];
   
   // Show empty state and hide views for events
-  const eventsEmptyState = $("#eventsEmptyState");
+  const eventsEmptyState = document.getElementById('eventsEmptyState');
   if (eventsEmptyState) {
     eventsEmptyState.classList.remove('hidden');
   }
-  const eventsRawView = $("#eventsRawView");
-  const eventsFormattedView = $("#eventsFormattedView");
+  const eventsRawView = document.getElementById('eventsRawView');
+  const eventsFormattedView = document.getElementById('eventsFormattedView');
   if (eventsRawView) eventsRawView.style.display = 'none';
   if (eventsFormattedView) eventsFormattedView.style.display = 'none';
   
   // Clear flags in experiment section
-  const flagsInExperimentTableBody = $("#flagsInExperimentTableBody");
+  const flagsInExperimentTableBody = document.getElementById('flagsInExperimentTableBody');
   if (flagsInExperimentTableBody) {
     flagsInExperimentTableBody.innerHTML = '';
   }
-  const flagsInExperimentRaw = $("#flagsInExperimentRaw");
+  const flagsInExperimentRaw = document.getElementById('flagsInExperimentRaw');
   if (flagsInExperimentRaw) {
     flagsInExperimentRaw.value = '';
   }
-  const flagsInExperimentEmptyState = $("#flagsInExperimentEmptyState");
+  const flagsInExperimentEmptyState = document.getElementById('flagsInExperimentEmptyState');
   if (flagsInExperimentEmptyState) {
     flagsInExperimentEmptyState.classList.remove('hidden');
   }
-  const flagsInExperimentRawView = $("#flagsInExperimentRawView");
-  const flagsInExperimentFormattedView = $("#flagsInExperimentFormattedView");
+  const flagsInExperimentRawView = document.getElementById('flagsInExperimentRawView');
+  const flagsInExperimentFormattedView = document.getElementById('flagsInExperimentFormattedView');
   if (flagsInExperimentRawView) flagsInExperimentRawView.style.display = 'none';
   if (flagsInExperimentFormattedView) flagsInExperimentFormattedView.style.display = 'none';
   
   // Clear conversion metrics section
-  const conversionMetricsTableBody = $("#conversionMetricsTableBody");
+  const conversionMetricsTableBody = document.getElementById('conversionMetricsTableBody');
   if (conversionMetricsTableBody) {
     conversionMetricsTableBody.innerHTML = '';
   }
-  const conversionMetricsRaw = $("#conversionMetricsRaw");
+  const conversionMetricsRaw = document.getElementById('conversionMetricsRaw');
   if (conversionMetricsRaw) {
     conversionMetricsRaw.value = '';
   }
-  const conversionMetricsEmptyState = $("#conversionMetricsEmptyState");
+  const conversionMetricsEmptyState = document.getElementById('conversionMetricsEmptyState');
   if (conversionMetricsEmptyState) {
     conversionMetricsEmptyState.classList.remove('hidden');
   }
-  const conversionMetricsRawView = $("#conversionMetricsRawView");
-  const conversionMetricsFormattedView = $("#conversionMetricsFormattedView");
+  const conversionMetricsRawView = document.getElementById('conversionMetricsRawView');
+  const conversionMetricsFormattedView = document.getElementById('conversionMetricsFormattedView');
   if (conversionMetricsRawView) conversionMetricsRawView.style.display = 'none';
   if (conversionMetricsFormattedView) conversionMetricsFormattedView.style.display = 'none';
   
   // Reset filter to "All"
-  $$('.filter-btn').forEach(btn => {
+  document.querySelectorAll('.filter-btn').forEach(btn => {
     btn.classList.remove('active');
     if (btn.getAttribute('data-filter') === 'all') {
       btn.classList.add('active');
@@ -1240,25 +1235,25 @@ function clearAllData() {
   updateFilterCounters();
   
   // Reset Client ID
-  $("#clientIDValue").textContent = "";
+  document.querySelector("#clientIDValue").textContent = "";
 }
 
 function exportData() {
   const exportObj = {
     exportedAt: new Date().toISOString(),
-    context: $(".user-context-details")?.value || "",
-    featureFlags: $(".featureflags-details")?.value || "",
-    events: $("#networkDetails")?.value || "",
-    experimentGoals: $(".experiments-details")?.value || "",
+    context: document.querySelector(".user-context-details")?.value || "",
+    featureFlags: document.querySelector(".featureflags-details")?.value || "",
+    events: document.querySelector("#networkDetails")?.value || "",
+    experimentGoals: document.querySelector(".experiments-details")?.value || "",
     counters: {
-      custom: $("#custom-value")?.textContent || "0",
-      identify: $("#identify-value")?.textContent || "0",
-      click: $("#click-value")?.textContent || "0",
-      feature: $("#feature-value")?.textContent || "0",
-      experiments: $("#experiments-value")?.textContent || "0",
-      experimentGoals: $("#experiments-goal-value")?.textContent || "0",
-      streamConnections: $("#streamConnection-value")?.textContent || "0",
-      streamEvents: $("#streamevent-value")?.textContent || "0"
+      custom: document.querySelector("#custom-value")?.textContent || "0",
+      identify: document.querySelector("#identify-value")?.textContent || "0",
+      click: document.querySelector("#click-value")?.textContent || "0",
+      feature: document.querySelector("#feature-value")?.textContent || "0",
+      experiments: document.querySelector("#experiments-value")?.textContent || "0",
+      experimentGoals: document.querySelector("#experiments-goal-value")?.textContent || "0",
+      streamConnections: document.querySelector("#streamConnection-value")?.textContent || "0",
+      streamEvents: document.querySelector("#streamevent-value")?.textContent || "0"
     }
   };
   
@@ -1312,7 +1307,7 @@ function checkDoNotTrack() {
           const { gpc, dnt, privacySignal } = result[0].result;
           
           // Find existing banner or create a new one
-          let dntBanner = $("#dnt-status-banner");
+          let dntBanner = document.getElementById('dnt-status-banner');
           if (!dntBanner) {
             dntBanner = document.createElement('div');
             dntBanner.id = 'dnt-status-banner';
@@ -1348,15 +1343,10 @@ function checkDoNotTrack() {
  * instead of scanning the entire HAR on every request (O(n²) -> O(1))
  */
 function onEventSourceEvents(request) {
-  // Check the request directly instead of scanning entire HAR
-  if (request._resourceType !== "eventsource") {
-    return;
-  }
+  if (request._resourceType !== "eventsource") return;
 
   const url = request.request?.url;
-  if (!url || !url.includes("clientstream")) {
-    return;
-  }
+  if (!url || !url.includes("clientstream")) return;
 
   handleStreamOpen({
     url: url,
@@ -1367,13 +1357,13 @@ function onEventSourceEvents(request) {
 }
 
 function onNavHandler() {
-  $$(".metric").forEach((ele) => ele.remove());
+  document.querySelectorAll(".metric").forEach((ele) => ele.remove());
 
-  let typeCounters = $$("span.type-counter");
+  let typeCounters = window.document.querySelectorAll("span.type-counter");
   typeCounters.forEach((counter) => (counter.textContent = 0));
 
   extensionGlobals.logEditor.setValue("");
-  $$("textArea").forEach((e) => (e.value = null));
+  document.querySelectorAll("textArea").forEach((e) => (e.value = null));
   
   // Clear stream connection tracking on navigation
   // (page refresh will create new SSE connections)
@@ -1381,7 +1371,7 @@ function onNavHandler() {
   
   // Clear events timeline on navigation
   extensionGlobals.eventsData = [];
-  const eventsTimeline = $("#eventsTimeline");
+  const eventsTimeline = document.getElementById('eventsTimeline');
   if (eventsTimeline) {
     eventsTimeline.innerHTML = '';
   }
@@ -1420,7 +1410,7 @@ function updateUserContextDetails(request) {
     return {};
   }
   let userObj = parseUrlForContext(request.url);
-  let textArea = $(".user-context-details");
+  let textArea = document.querySelector(".user-context-details");
   if (!userObj) {
     return userObj;
   }
@@ -1433,17 +1423,17 @@ function updateUserContextDetails(request) {
   updateContextTable(userObj);
   
   // Hide empty state and show the active view
-  const contextEmptyState = $("#contextEmptyState");
+  const contextEmptyState = document.getElementById('contextEmptyState');
   if (contextEmptyState) {
     contextEmptyState.classList.add('hidden');
   }
   
   // Show the currently active view
-  const activeToggle = $('#userContextContainer .toggle-btn.active');
+  const activeToggle = document.querySelector('#userContextContainer .toggle-btn.active');
   if (activeToggle) {
     const activeView = activeToggle.getAttribute('data-view');
-    const rawView = $("#contextRawView");
-    const formattedView = $("#contextFormattedView");
+    const rawView = document.getElementById('contextRawView');
+    const formattedView = document.getElementById('contextFormattedView');
     
     if (activeView === 'raw') {
       rawView.style.display = 'block';
@@ -1455,7 +1445,7 @@ function updateUserContextDetails(request) {
   }
 
   let clientID= parseClientIDFromUrl(request.url);
-  let clientIDValue = $("#clientIDValue");
+  let clientIDValue = document.querySelector("#clientIDValue");
   clientIDValue.textContent = `Client-side ID: ${clientID}`;
 
   return userObj;
@@ -1483,47 +1473,18 @@ function getFlagsInExperiment(flagJSON){
 function evalxHandler(request) {
   const url = request.request?.url;
 
-  // Check if this is a LaunchDarkly SDK eval request
-  if (!isLaunchDarklyUrl(url)) {
-    return;
-  }
-
-  // Only process /sdk/eval or /sdk/evalx endpoints
-  if (!url.includes("/sdk/eval")) {
-    return;
-  }
-
-  // Skip empty evalx responses
-  if (url.includes("/sdk/evalx/") && request.response?.content?.size === 0) {
-    return;
-  }
+  if (!isLaunchDarklyUrl(url)) return;
+  if (!url.includes("/sdk/eval")) return;
+  if (url.includes("/sdk/evalx/") && request.response?.content?.size === 0) return;
 
   request.getContent((body) => {
-    if (!body) {
-      log(`evalxHandler() body is empty, skipping.`);
-      return;
-    }
+    if (!body) { log(`evalxHandler() body is empty, skipping.`); return; }
 
     let data;
-    try {
-      data = JSON.parse(body);
-    } catch (err) {
-      log(`evalxHandler() JSON parse error: ${err.message}`);
-      return;
-    }
+    try { data = JSON.parse(body); } catch (err) { log(`evalxHandler() JSON parse error: ${err.message}`); return; }
+    if (!data || (typeof data === 'object' && Object.keys(data).length === 0)) { log(`evalxHandler() parsed response is empty, skipping.`); return; }
 
-    if (!data || (typeof data === 'object' && Object.keys(data).length === 0)) {
-      log(`evalxHandler() parsed response is empty, skipping.`);
-      return;
-    }
-
-    handleEval({
-      url: url,
-      data: data,
-      method: request.request.method,
-      bodyLength: body.length,
-      timings: request.timings
-    });
+    handleEval({ url: url, data: data, method: request.request.method, bodyLength: body.length, timings: request.timings });
   });
 }
 
@@ -1548,130 +1509,6 @@ function logStreamConnection(connectionInfo, hash) {
   );
 }
 
-// ================================================================
-// Shared handler functions — used by both Chrome extension handlers
-// and the bookmarklet adapter (window.LDPanel).
-// ================================================================
-
-/**
- * Handle an SDK /sdk/eval response.
- * d = { url, data, method?, bodyLength?, timings?, timestamp? }
- */
-function handleEval(d) {
-  var url = d.url;
-  var bodyObj = d.data;
-  var method = d.method || 'GET';
-  var timestamp = d.timestamp || getTimestamp();
-
-  // Update context from URL
-  if (method === 'GET') {
-    updateUserContextDetails({ url: url });
-  }
-
-  // Flags in experiment
-  var flagsInExperimentData = getFlagsInExperiment(bodyObj);
-  var flagsInExperimentCount = Object.keys(flagsInExperimentData).length;
-  updateExperimentsCounter(flagsInExperimentCount);
-  if (flagsInExperimentCount > 0) {
-    var flagsInExpSection = $("#flagsInExperimentSection");
-    if (flagsInExpSection) flagsInExpSection.style.display = 'block';
-    updateFlagInExperimentTable(flagsInExperimentData);
-  }
-
-  // Raw textarea
-  var ffTextArea = $(".featureflags-details");
-  if (ffTextArea) {
-    ffTextArea.value = JSON.stringify(bodyObj, null, 2);
-    updateEmptyState(ffTextArea);
-  }
-
-  // Formatted table
-  updateFeatureFlagsTable(bodyObj);
-  showSectionView('featureFlagsContainer', 'flagsEmptyState', 'flagsRawView', 'flagsFormattedView');
-
-  // Log to raw events
-  extensionGlobals.logEditor.insert(
-    '\n======== [' + timestamp + '] RECEIVE EVENT START ========\n' +
-    method + ' url[' + url + ']\n' +
-    JSON.stringify(bodyObj) + '\n' +
-    '======== RECEIVE EVENT END   ========\n'
-  );
-
-  // Timeline (timings and bodyLength are optional — present for extension, absent for bookmarklet)
-  addReceivedEvent(url, bodyObj, timestamp, d.timings || null, d.bodyLength || 0);
-}
-
-/**
- * Handle a POST to /events/bulk.
- * d = { url, body, timestamp? }
- */
-function handleSent(d) {
-  var url = d.url;
-  var timestamp = d.timestamp || getTimestamp();
-  var events;
-  try { events = JSON.parse(d.body); } catch (e) { return; }
-  if (!Array.isArray(events) || events.length === 0) return;
-
-  extensionGlobals.logEditor.insert(
-    '\n======== [' + timestamp + '] SENT EVENT START ========\n' +
-    'POST url[' + url + ']\n' +
-    JSON.stringify(events) + '\n' +
-    '======== SENT EVENT END   ========\n'
-  );
-
-  var eventTypeCounts = countEventTypes(events);
-  updateTypeCounters(eventTypeCounts);
-  addSentEvents(url, events, timestamp);
-}
-
-/**
- * Handle experiment goals.
- * d = { url, data, href?, search?, hash?, timestamp? }
- * Extension passes href/search/hash from evalInspectPage.
- * Bookmarklet omits them and window.location is read directly.
- */
-function handleGoals(d) {
-  processGoals(
-    d.data,
-    d.href || window.location.href,
-    d.search || window.location.search,
-    d.hash || window.location.hash
-  );
-}
-
-/**
- * Handle a new SSE stream connection.
- * d = { url, hash, clientId, context, timestamp?, eventSource? }
- */
-function handleStreamOpen(d) {
-  var hash = d.hash;
-  if (!hash || extensionGlobals.streamConnections.has(hash)) return;
-
-  var connectionInfo = {
-    url: d.url,
-    status: 'active',
-    startTime: d.timestamp || new Date().toISOString(),
-    eventCount: 0,
-    context: d.context,
-    clientId: d.clientId
-  };
-  extensionGlobals.streamConnections.set(hash, connectionInfo);
-  logStreamConnection(connectionInfo, hash);
-  updateStreamConnectionCounter();
-}
-
-/**
- * Handle an individual SSE event (put/patch/ping).
- * d = { hash, type, timestamp? }
- */
-function handleStreamEvent(d) {
-  var conn = extensionGlobals.streamConnections.get(d.hash);
-  if (conn) {
-    conn.eventCount = (conn.eventCount || 0) + 1;
-  }
-  updateStreamEventsCounter();
-}
-
 /**
  * Mark a stream connection as closed
  */
@@ -1687,20 +1524,11 @@ function closeStreamConnection(hash) {
 function eventsHandler(request) {
   const url = request.request?.url;
 
-  // Only process POST requests to LaunchDarkly events endpoint
-  if (!isLaunchDarklyUrl(url) || request.request?.method !== "POST") {
-    return;
-  }
-
-  if (!url.includes("/events/bulk")) {
-    return;
-  }
+  if (!isLaunchDarklyUrl(url) || request.request?.method !== "POST") return;
+  if (!url.includes("/events/bulk")) return;
 
   const postData = request.request?.postData?.text;
-  if (!postData) {
-    log(`eventsHandler() no postData, skipping.`);
-    return;
-  }
+  if (!postData) { log(`eventsHandler() no postData, skipping.`); return; }
 
   handleSent({ url: url, body: postData });
 }
@@ -1708,7 +1536,7 @@ function eventsHandler(request) {
 function updateTypeCounters(eventTypeCounts) {
   Object.keys(eventTypeCounts).forEach((key) => {
     let eleId = `${key}-value`;
-    let ele = $(`#${eleId}`);
+    let ele = window.document.querySelector(`#${eleId}`);
     if (!ele) {
       log(`updateTypeCounters(): eleId=${eleId} NOT FOUND!`);
       return;
@@ -1721,13 +1549,13 @@ function updateTypeCounters(eventTypeCounts) {
   });
 }
 function updateExperimentGoalsCounter(count) {
-  let ele = $("#experiments-goal-value");
+  let ele = window.document.querySelector("#experiments-goal-value");
   const newValue = parseInt(ele.textContent) + count;
   ele.textContent = newValue;
   animateCounter(ele);
 }
 function updateExperimentsCounter(count) {
-  let ele = $("#experiments-value");
+  let ele = window.document.querySelector("#experiments-value");
   ele.textContent = count;
   animateCounter(ele);
 }
@@ -1737,7 +1565,7 @@ function updateExperimentsCounter(count) {
  * intercept individual SSE events. This counter now shows total connections.
  */
 function updateStreamEventsCounter() {
-  const ele = $("#streamevent-value");
+  const ele = window.document.querySelector("#streamevent-value");
   if (!ele) return;
   
   // Count total events across all connections
@@ -1754,7 +1582,7 @@ function updateStreamEventsCounter() {
  * Update stream connection counter to show active connections
  */
 function updateStreamConnectionCounter() {
-  const ele = $("#streamConnection-value");
+  const ele = window.document.querySelector("#streamConnection-value");
   if (!ele) return;
   
   // Count only active connections
@@ -1821,33 +1649,17 @@ function countEventTypes(events) {
 function goalsHandler(request) {
   const url = request.request?.url;
 
-  if (!isLaunchDarklyUrl(url)) {
-    return;
-  }
-
-  // Only process /goals/ endpoint with non-empty response
-  if (!url.includes("/goals/")) {
-    return;
-  }
-
-  if (request.response?.content?.size === 0) {
-    return;
-  }
+  if (!isLaunchDarklyUrl(url)) return;
+  if (!url.includes("/goals/")) return;
+  if (request.response?.content?.size === 0) return;
 
   request.getContent((body) => {
-    if (!body) {
-      return;
-    }
+    if (!body) return;
 
     let data;
-    try {
-      data = JSON.parse(body);
-    } catch (err) {
-      log(`goalsHandler() JSON parse error: ${err.message}`);
-      return;
-    }
+    try { data = JSON.parse(body); } catch (err) { log(`goalsHandler() JSON parse error: ${err.message}`); return; }
 
-    // Extension must use evalInspectPage to read the inspected page's URL
+    // Extension uses evalInspectPage to read the inspected page's URL
     Promise.allSettled([
       evalInspectPage((_) => window.location.href),
       evalInspectPage((_) => window.location.search),
@@ -1856,16 +1668,13 @@ function goalsHandler(request) {
       .then((results) => {
         const [winHref, winSearch, winHash] = results;
         handleGoals({
-          url: url,
-          data: data,
+          url: url, data: data,
           href: winHref.value?.[0]?.result || '',
           search: winSearch.value?.[0]?.result || '',
           hash: winHash.value?.[0]?.result || ''
         });
       })
-      .catch((err) => {
-        log(`goalsHandler() Error: ${err.message || err}`);
-      });
+      .catch((err) => { log(`goalsHandler() Error: ${err.message || err}`); });
   });
 }
 
@@ -1875,13 +1684,13 @@ function updateConversionMetricsTable(goals) {
   }
 
   // Update raw textarea
-  const rawTextarea = $("#conversionMetricsRaw");
+  const rawTextarea = document.getElementById('conversionMetricsRaw');
   if (rawTextarea) {
     rawTextarea.value = JSON.stringify(goals, null, 2);
   }
 
   // Update formatted table
-  const tableBody = $("#conversionMetricsTableBody");
+  const tableBody = document.getElementById('conversionMetricsTableBody');
   if (tableBody) {
     // Clear existing rows
     tableBody.innerHTML = '';
@@ -1954,17 +1763,17 @@ function updateConversionMetricsTable(goals) {
   }
   
   // Hide empty state and show the active view
-  const emptyState = $("#conversionMetricsEmptyState");
+  const emptyState = document.getElementById('conversionMetricsEmptyState');
   if (emptyState) {
     emptyState.classList.add('hidden');
   }
   
   // Show the currently active view
-  const activeToggle = $('#conversionMetricsSection .toggle-btn.active');
+  const activeToggle = document.querySelector('#conversionMetricsSection .toggle-btn.active');
   if (activeToggle) {
     const activeView = activeToggle.getAttribute('data-view');
-    const rawView = $("#conversionMetricsRawView");
-    const formattedView = $("#conversionMetricsFormattedView");
+    const rawView = document.getElementById('conversionMetricsRawView');
+    const formattedView = document.getElementById('conversionMetricsFormattedView');
     
     if (activeView === 'raw') {
       rawView.style.display = 'block';
@@ -1984,13 +1793,13 @@ function updateFlagInExperimentTable(flags) {
   }
 
   // Update raw textarea
-  const rawTextarea = $("#flagsInExperimentRaw");
+  const rawTextarea = document.getElementById('flagsInExperimentRaw');
   if (rawTextarea) {
     rawTextarea.value = JSON.stringify(flags, null, 2);
   }
 
   // Update formatted table
-  const tableBody = $("#flagsInExperimentTableBody");
+  const tableBody = document.getElementById('flagsInExperimentTableBody');
   if (tableBody) {
     // Clear existing rows
     tableBody.innerHTML = '';
@@ -2030,17 +1839,17 @@ function updateFlagInExperimentTable(flags) {
   }
   
   // Hide empty state and show the active view
-  const emptyState = $("#flagsInExperimentEmptyState");
+  const emptyState = document.getElementById('flagsInExperimentEmptyState');
   if (emptyState) {
     emptyState.classList.add('hidden');
   }
   
   // Show the currently active view
-  const activeToggle = $('#flagsInExperimentSection .toggle-btn.active');
+  const activeToggle = document.querySelector('#flagsInExperimentSection .toggle-btn.active');
   if (activeToggle) {
     const activeView = activeToggle.getAttribute('data-view');
-    const rawView = $("#flagsInExperimentRawView");
-    const formattedView = $("#flagsInExperimentFormattedView");
+    const rawView = document.getElementById('flagsInExperimentRawView');
+    const formattedView = document.getElementById('flagsInExperimentFormattedView');
     
     if (activeView === 'raw') {
       rawView.style.display = 'block';
@@ -2088,12 +1897,12 @@ function processGoals(goals, locationHref, search, hash) {
       collection.push(entry);
     });
     if (collection.length > 0){
-      let element = $("#conversionMetricsSection");
+      let element = document.getElementById('conversionMetricsSection');
       if (element) {
         element.style.display = 'block';
       }
 
-      element = $("#experimentGoals");
+      element = document.getElementById('experimentGoals');
       if (element) {
         element.style.display = 'block';
       }
@@ -2252,35 +2061,114 @@ function debug(msg) {
 }
 
 // ================================================================
-// Bookmarklet API — allows the bookmarklet adapter to drive panel.js
+// Shared handler functions — used by both Chrome extension handlers
+// and the bookmarklet adapter (window.LDPanel).
+// ================================================================
+
+function handleEval(d) {
+  var url = d.url;
+  var bodyObj = d.data;
+  var method = d.method || 'GET';
+  var timestamp = d.timestamp || getTimestamp();
+
+  if (method === 'GET') {
+    updateUserContextDetails({ url: url });
+  }
+
+  var flagsInExperimentData = getFlagsInExperiment(bodyObj);
+  var flagsInExperimentCount = Object.keys(flagsInExperimentData).length;
+  updateExperimentsCounter(flagsInExperimentCount);
+  if (flagsInExperimentCount > 0) {
+    var flagsInExpSection = document.getElementById('flagsInExperimentSection');
+    if (flagsInExpSection) flagsInExpSection.style.display = 'block';
+    updateFlagInExperimentTable(flagsInExperimentData);
+  }
+
+  var ffTextArea = document.querySelector(".featureflags-details");
+  if (ffTextArea) {
+    ffTextArea.value = JSON.stringify(bodyObj, null, 2);
+    updateEmptyState(ffTextArea);
+  }
+
+  updateFeatureFlagsTable(bodyObj);
+  showSectionView('featureFlagsContainer', 'flagsEmptyState', 'flagsRawView', 'flagsFormattedView');
+
+  extensionGlobals.logEditor.insert(
+    '\n======== [' + timestamp + '] RECEIVE EVENT START ========\n' +
+    method + ' url[' + url + ']\n' +
+    JSON.stringify(bodyObj) + '\n' +
+    '======== RECEIVE EVENT END   ========\n'
+  );
+
+  addReceivedEvent(url, bodyObj, timestamp, d.timings || null, d.bodyLength || 0);
+}
+
+function handleSent(d) {
+  var url = d.url;
+  var timestamp = d.timestamp || getTimestamp();
+  var events;
+  try { events = JSON.parse(d.body); } catch (e) { return; }
+  if (!Array.isArray(events) || events.length === 0) return;
+
+  extensionGlobals.logEditor.insert(
+    '\n======== [' + timestamp + '] SENT EVENT START ========\n' +
+    'POST url[' + url + ']\n' +
+    JSON.stringify(events) + '\n' +
+    '======== SENT EVENT END   ========\n'
+  );
+
+  var eventTypeCounts = countEventTypes(events);
+  updateTypeCounters(eventTypeCounts);
+  addSentEvents(url, events, timestamp);
+}
+
+function handleGoals(d) {
+  processGoals(
+    d.data,
+    d.href || window.location.href,
+    d.search || window.location.search,
+    d.hash || window.location.hash
+  );
+}
+
+function handleStreamOpen(d) {
+  var hash = d.hash;
+  if (!hash || extensionGlobals.streamConnections.has(hash)) return;
+
+  var connectionInfo = {
+    url: d.url,
+    status: 'active',
+    startTime: d.timestamp || new Date().toISOString(),
+    eventCount: 0,
+    context: d.context,
+    clientId: d.clientId
+  };
+  extensionGlobals.streamConnections.set(hash, connectionInfo);
+  logStreamConnection(connectionInfo, hash);
+  updateStreamConnectionCounter();
+}
+
+function handleStreamEvent(d) {
+  var conn = extensionGlobals.streamConnections.get(d.hash);
+  if (conn) {
+    conn.eventCount = (conn.eventCount || 0) + 1;
+  }
+  updateStreamEventsCounter();
+}
+
+// ================================================================
+// Bookmarklet API — allows the bookmarklet to drive panel.js
 // without Chrome DevTools APIs.
 // ================================================================
 window.LDPanel = {
-  /** Override the DOM root (e.g. shadow DOM) */
-  setRoot: function (root) { _root = root; },
-
-  /** Wire up buttons, sections, toggles, etc. */
   setupButtons: setupButtons,
-
-  /** Handle an SDK /sdk/eval response (pre-parsed JSON). */
   handleEval: handleEval,
-
-  /** Handle a POST to /events/bulk (raw body string). */
   handleSent: handleSent,
-
-  /** Handle experiment goals (pre-parsed JSON or with location data). */
   handleGoals: handleGoals,
-
-  /** Handle a new SSE stream connection. */
   handleStreamOpen: handleStreamOpen,
-
-  /** Handle an individual SSE event (put/patch/ping). */
   handleStreamEvent: handleStreamEvent,
-
   clearAllData: clearAllData,
   showToast: showToast,
-
-  /** Expose helpers for interceptors module */
   isLaunchDarklyUrl: isLaunchDarklyUrl,
   parseContextHashFromUrl: parseContextHashFromUrl,
   parseClientIDFromUrl: parseClientIDFromUrl,

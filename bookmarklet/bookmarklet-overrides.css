@@ -1,24 +1,15 @@
 /*
  * Bookmarklet overrides for the LD SDK Event Viewer.
  *
- * Loaded into the Shadow DOM alongside the extension's mystyle.css.
+ * Loaded into <head> alongside the extension's mystyle.css.
  * Provides the panel chrome (header, draggable, close/minimize) and
  * adjusts spacing for the narrower overlay panel.
- *
- * Uses CSS custom properties from mystyle.css (:host scope).
  */
 
 /* ================================================================
-   Shadow DOM reset
+   Base reset for panel content
    ================================================================ */
-:host {
-    all: initial;
-    font-family: var(--ld-font-system);
-    font-size: var(--ld-font-lg);
-    color: var(--ld-color-text);
-}
-
-*, *::before, *::after {
+#ld-event-viewer-root *, #ld-event-viewer-root *::before, #ld-event-viewer-root *::after {
     box-sizing: border-box;
 }
 
@@ -29,15 +20,15 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    background: var(--ld-color-bg);
-    border-left: 1px solid var(--ld-color-border-input);
+    background: #fff;
+    border-left: 1px solid #d0d0d0;
     box-shadow: -4px 0 20px rgba(0,0,0,0.12);
 }
 
 .panel-header {
-    background: var(--ld-gradient-panel-header);
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
     color: #fff;
-    padding: 10px var(--ld-space-lg);
+    padding: 10px 12px;
     cursor: move;
     user-select: none;
     flex-shrink: 0;
@@ -46,12 +37,12 @@
 .panel-title-row {
     display: flex;
     align-items: center;
-    gap: var(--ld-space-md);
+    gap: 8px;
 }
 
 .panel-title-row h1 {
     flex: 1;
-    font-size: var(--ld-font-2xl);
+    font-size: 15px;
     margin: 0;
     color: #fff;
     font-weight: 600;
@@ -61,7 +52,7 @@
     width: 28px;
     height: 28px;
     border: none;
-    border-radius: var(--ld-radius-md);
+    border-radius: 6px;
     background: rgba(255,255,255,0.12);
     color: #fff;
     font-size: 16px;
@@ -70,7 +61,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background var(--ld-transition-fast);
+    transition: background 0.15s ease;
 }
 
 .panel-control-btn:hover {
@@ -78,13 +69,13 @@
 }
 
 .panel-control-btn.close:hover {
-    background: var(--ld-color-error);
+    background: #f44336;
 }
 
 .panel-header .action-buttons {
     display: flex;
-    gap: var(--ld-space-md);
-    margin-top: var(--ld-space-md);
+    gap: 8px;
+    margin-top: 8px;
 }
 
 /* ================================================================
@@ -98,7 +89,7 @@
 }
 
 /* ================================================================
-   Toast container — inside shadow DOM, positioned relative to panel
+   Toast container — positioned relative to panel
    ================================================================ */
 #toast-container {
     position: absolute;
