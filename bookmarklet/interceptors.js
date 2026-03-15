@@ -103,7 +103,7 @@
     try {
       const data = JSON.parse(body);
       if (data && Object.keys(data).length > 0) {
-        bus.emit('eval', { url, data, bodyLength: body.length, timestamp: api().getTimestamp() });
+        bus.emit('eval', { url, data, method: 'GET', bodyLength: body.length, timestamp: api().getTimestamp() });
       }
     } catch (error) {
       console.warn('[LD Event Viewer] Failed to parse eval response:', error.message);

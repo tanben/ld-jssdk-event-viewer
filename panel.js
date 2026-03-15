@@ -1,11 +1,12 @@
-// Goal tracking helpers (inlined from goalTracker-mod.js)
+// Goal tracking helpers (inlined from goalTracker-mod.js so the bookmarklet
+// can load panel.js without a separate script tag).
 function escapeStringRegexp(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 function doesUrlMatch(matcher, href, search, hash) {
-  var keepHash = (matcher.kind === 'substring' || matcher.kind === 'regex') && hash.includes('/');
-  var canonicalUrl = (keepHash ? href : href.replace(hash, '')).replace(search, '');
-  var regex, testUrl;
+  const keepHash = (matcher.kind === 'substring' || matcher.kind === 'regex') && hash.includes('/');
+  const canonicalUrl = (keepHash ? href : href.replace(hash, '')).replace(search, '');
+  let regex, testUrl;
   switch (matcher.kind) {
     case 'exact':     testUrl = href;         regex = new RegExp('^' + escapeStringRegexp(matcher.url) + '/?$'); break;
     case 'canonical': testUrl = canonicalUrl;  regex = new RegExp('^' + escapeStringRegexp(matcher.url) + '/?$'); break;
@@ -1343,17 +1344,46 @@ function checkDoNotTrack() {
  * instead of scanning the entire HAR on every request (O(n²) -> O(1))
  */
 function onEventSourceEvents(request) {
-  if (request._resourceType !== "eventsource") return;
-
+  // Check the request directly instead of scanning entire HAR
+  if (request._resourceType !== "eventsource") {
+    return;
+  }
+  
   const url = request.request?.url;
-  if (!url || !url.includes("clientstream")) return;
-
-  handleStreamOpen({
+  if (!url || !url.includes("clientstream")) {
+    return;
+  }
+  
+  const hash = parseContextHashFromUrl(url);
+  
+  // Validate hash to prevent null/undefined duplicates
+  if (!hash) {
+    log(`Warning: Could not parse context hash from stream URL: ${url}`);
+    return;
+  }
+  
+  // Check if we already tracked this connection
+  if (extensionGlobals.streamConnections.has(hash)) {
+    return;
+  }
+  
+  // Track the new connection
+  const connectionInfo = {
     url: url,
-    hash: parseContextHashFromUrl(url),
-    clientId: parseClientIDFromUrl(url),
-    context: parseUrlForContext(url)
-  });
+    status: 'active',
+    startTime: new Date().toISOString(),
+    eventCount: 0,
+    context: parseUrlForContext(url),
+    clientId: parseClientIDFromUrl(url)
+  };
+  
+  extensionGlobals.streamConnections.set(hash, connectionInfo);
+  
+  // Log the connection detection
+  logStreamConnection(connectionInfo, hash);
+  
+  // Update counter
+  updateStreamConnectionCounter();
 }
 
 function onNavHandler() {
@@ -1472,19 +1502,90 @@ function getFlagsInExperiment(flagJSON){
 }
 function evalxHandler(request) {
   const url = request.request?.url;
+  
+  // Check if this is a LaunchDarkly SDK eval request
+  if (!isLaunchDarklyUrl(url)) {
+    return;
+  }
 
-  if (!isLaunchDarklyUrl(url)) return;
-  if (!url.includes("/sdk/eval")) return;
-  if (url.includes("/sdk/evalx/") && request.response?.content?.size === 0) return;
+  // Only process /sdk/eval or /sdk/evalx endpoints
+  if (!url.includes("/sdk/eval")) {
+    return;
+  }
+  
+  // Skip empty evalx responses
+  if (url.includes("/sdk/evalx/") && request.response?.content?.size === 0) {
+    return;
+  }
+
+  // Update user context for GET requests
+  if (request.request.method === "GET") {
+    updateUserContextDetails(request.request);
+  }
+  
+  // Log HAR timings for debugging
+  // log(`LaunchDarkly Extension: sdk/eval HAR timings (ms)=${JSON.stringify(request.timings)}`);
 
   request.getContent((body) => {
-    if (!body) { log(`evalxHandler() body is empty, skipping.`); return; }
+    if (!body) {
+      log(`evalxHandler() body is empty, skipping.`);
+      return;
+    }
 
-    let data;
-    try { data = JSON.parse(body); } catch (err) { log(`evalxHandler() JSON parse error: ${err.message}`); return; }
-    if (!data || (typeof data === 'object' && Object.keys(data).length === 0)) { log(`evalxHandler() parsed response is empty, skipping.`); return; }
+    let bodyObj;
+    try {
+      bodyObj = JSON.parse(body);
+    } catch (err) {
+      log(`evalxHandler() JSON parse error: ${err.message}`);
+      return;
+    }
 
-    handleEval({ url: url, data: data, method: request.request.method, bodyLength: body.length, timings: request.timings });
+    // Check for empty response (works for both arrays and objects)
+    if (!bodyObj || (typeof bodyObj === 'object' && Object.keys(bodyObj).length === 0)) {
+      log(`evalxHandler() parsed response is empty, skipping.`);
+      return;
+    }
+
+    // const flagCount = Object.keys(bodyObj).length;
+    // log(`LaunchDarkly Extension: sdk/eval body size=${body.length} bytes, flags=${flagCount}`);
+
+    // Process flags in experiment
+    const flagsInExperimentData = getFlagsInExperiment(bodyObj);
+    const flagsInExperimentCount = Object.keys(flagsInExperimentData).length;
+    
+    updateExperimentsCounter(flagsInExperimentCount);
+    if (flagsInExperimentCount > 0) {
+      const flagsInExpSection = document.getElementById('flagsInExperimentSection');
+      if (flagsInExpSection) {
+        flagsInExpSection.style.display = 'block';
+      }
+      updateFlagInExperimentTable(flagsInExperimentData);
+    }
+    
+    // Update raw textarea
+    const ffTextArea = document.querySelector(".featureflags-details");
+    if (ffTextArea) {
+      ffTextArea.value = JSON.stringify(bodyObj, null, 2);
+      updateEmptyState(ffTextArea);
+    }
+    
+    // Update formatted table view
+    updateFeatureFlagsTable(bodyObj);
+    
+    // Show the active view for feature flags section
+    showSectionView('featureFlagsContainer', 'flagsEmptyState', 'flagsRawView', 'flagsFormattedView');
+
+    // Log to events editor
+    const timestamp = getTimestamp();
+    extensionGlobals.logEditor.insert(
+      `\n======== [${timestamp}] RECEIVE EVENT START ========\n` +
+      `${request.request.method} url[${url}]\n` +
+      `${JSON.stringify(bodyObj)}\n` +
+      `======== RECEIVE EVENT END   ========\n`
+    );
+    
+    // Add to events timeline (include HAR timings and body size)
+    addReceivedEvent(url, bodyObj, timestamp, request.timings, body.length);
   });
 }
 
@@ -1523,14 +1624,51 @@ function closeStreamConnection(hash) {
 
 function eventsHandler(request) {
   const url = request.request?.url;
+  
+  // Only process POST requests to LaunchDarkly events endpoint
+  if (!isLaunchDarklyUrl(url) || request.request?.method !== "POST") {
+    return;
+  }
 
-  if (!isLaunchDarklyUrl(url) || request.request?.method !== "POST") return;
-  if (!url.includes("/events/bulk")) return;
+  if (!url.includes("/events/bulk")) {
+    return;
+  }
 
+  // Parse the POST data
   const postData = request.request?.postData?.text;
-  if (!postData) { log(`eventsHandler() no postData, skipping.`); return; }
+  if (!postData) {
+    log(`eventsHandler() no postData, skipping.`);
+    return;
+  }
 
-  handleSent({ url: url, body: postData });
+  let events;
+  try {
+    events = JSON.parse(postData);
+  } catch (err) {
+    log(`eventsHandler() JSON parse error: ${err.message}`);
+    return;
+  }
+  
+  if (!Array.isArray(events) || events.length === 0) {
+    log(`eventsHandler() events array is empty, skipping.`);
+    return;
+  }
+  
+  // Log to events editor
+  const timestamp = getTimestamp();
+  extensionGlobals.logEditor.insert(
+    `\n======== [${timestamp}] SENT EVENT START ========\n` +
+    `${request.request.method} url[${url}]\n` +
+    `${JSON.stringify(events)}\n` +
+    `======== SENT EVENT END   ========\n`
+  );
+
+  // Update counters
+  const eventTypeCounts = countEventTypes(events);
+  updateTypeCounters(eventTypeCounts);
+  
+  // Add to events timeline
+  addSentEvents(url, events, timestamp);
 }
 
 function updateTypeCounters(eventTypeCounts) {
@@ -1648,18 +1786,33 @@ function countEventTypes(events) {
 
 function goalsHandler(request) {
   const url = request.request?.url;
-
-  if (!isLaunchDarklyUrl(url)) return;
-  if (!url.includes("/goals/")) return;
-  if (request.response?.content?.size === 0) return;
-
+  
+  if (!isLaunchDarklyUrl(url)) {
+    return;
+  }
+  
+  // Only process /goals/ endpoint with non-empty response
+  if (!url.includes("/goals/")) {
+    return;
+  }
+  
+  if (request.response?.content?.size === 0) {
+    return;
+  }
+  
   request.getContent((body) => {
-    if (!body) return;
-
-    let data;
-    try { data = JSON.parse(body); } catch (err) { log(`goalsHandler() JSON parse error: ${err.message}`); return; }
-
-    // Extension uses evalInspectPage to read the inspected page's URL
+    if (!body) {
+      return;
+    }
+    
+    let goals;
+    try {
+      goals = JSON.parse(body);
+    } catch (err) {
+      log(`goalsHandler() JSON parse error: ${err.message}`);
+      return;
+    }
+    
     Promise.allSettled([
       evalInspectPage((_) => window.location.href),
       evalInspectPage((_) => window.location.search),
@@ -1667,14 +1820,14 @@ function goalsHandler(request) {
     ])
       .then((results) => {
         const [winHref, winSearch, winHash] = results;
-        handleGoals({
-          url: url, data: data,
-          href: winHref.value?.[0]?.result || '',
-          search: winSearch.value?.[0]?.result || '',
-          hash: winHash.value?.[0]?.result || ''
-        });
+        const href = winHref.value?.[0]?.result || '';
+        const search = winSearch.value?.[0]?.result || '';
+        const hash = winHash.value?.[0]?.result || '';
+        processGoals(goals, href, search, hash);
       })
-      .catch((err) => { log(`goalsHandler() Error: ${err.message || err}`); });
+      .catch((err) => {
+        log(`goalsHandler() Error: ${err.message || err}`);
+      });
   });
 }
 
@@ -2061,21 +2214,20 @@ function debug(msg) {
 }
 
 // ================================================================
-// Shared handler functions — used by both Chrome extension handlers
-// and the bookmarklet adapter (window.LDPanel).
+// Bookmarklet API
+//
+// The handle* functions accept pre-parsed data from the bookmarklet's
+// network interceptors and drive the same UI helpers that the Chrome
+// DevTools handlers use.  They are intentionally separate from the
+// extension handlers above, which deal with HAR request objects.
 // ================================================================
 
 function handleEval(d) {
-  var url = d.url;
-  var bodyObj = d.data;
-  var method = d.method || 'GET';
-  var timestamp = d.timestamp || getTimestamp();
-
-  if (method === 'GET') {
-    updateUserContextDetails({ url: url });
+  if (d.method === 'GET') {
+    updateUserContextDetails({ url: d.url });
   }
 
-  var flagsInExperimentData = getFlagsInExperiment(bodyObj);
+  var flagsInExperimentData = getFlagsInExperiment(d.data);
   var flagsInExperimentCount = Object.keys(flagsInExperimentData).length;
   updateExperimentsCounter(flagsInExperimentCount);
   if (flagsInExperimentCount > 0) {
@@ -2084,27 +2236,27 @@ function handleEval(d) {
     updateFlagInExperimentTable(flagsInExperimentData);
   }
 
-  var ffTextArea = document.querySelector(".featureflags-details");
+  var ffTextArea = document.querySelector('.featureflags-details');
   if (ffTextArea) {
-    ffTextArea.value = JSON.stringify(bodyObj, null, 2);
+    ffTextArea.value = JSON.stringify(d.data, null, 2);
     updateEmptyState(ffTextArea);
   }
 
-  updateFeatureFlagsTable(bodyObj);
+  updateFeatureFlagsTable(d.data);
   showSectionView('featureFlagsContainer', 'flagsEmptyState', 'flagsRawView', 'flagsFormattedView');
 
+  var timestamp = d.timestamp || getTimestamp();
   extensionGlobals.logEditor.insert(
     '\n======== [' + timestamp + '] RECEIVE EVENT START ========\n' +
-    method + ' url[' + url + ']\n' +
-    JSON.stringify(bodyObj) + '\n' +
+    (d.method || 'GET') + ' url[' + d.url + ']\n' +
+    JSON.stringify(d.data) + '\n' +
     '======== RECEIVE EVENT END   ========\n'
   );
 
-  addReceivedEvent(url, bodyObj, timestamp, d.timings || null, d.bodyLength || 0);
+  addReceivedEvent(d.url, d.data, timestamp, d.timings || null, d.bodyLength || 0);
 }
 
 function handleSent(d) {
-  var url = d.url;
   var timestamp = d.timestamp || getTimestamp();
   var events;
   try { events = JSON.parse(d.body); } catch (e) { return; }
@@ -2112,14 +2264,14 @@ function handleSent(d) {
 
   extensionGlobals.logEditor.insert(
     '\n======== [' + timestamp + '] SENT EVENT START ========\n' +
-    'POST url[' + url + ']\n' +
+    'POST url[' + d.url + ']\n' +
     JSON.stringify(events) + '\n' +
     '======== SENT EVENT END   ========\n'
   );
 
   var eventTypeCounts = countEventTypes(events);
   updateTypeCounters(eventTypeCounts);
-  addSentEvents(url, events, timestamp);
+  addSentEvents(d.url, events, timestamp);
 }
 
 function handleGoals(d) {
@@ -2156,22 +2308,20 @@ function handleStreamEvent(d) {
   updateStreamEventsCounter();
 }
 
-// ================================================================
-// Bookmarklet API — allows the bookmarklet to drive panel.js
-// without Chrome DevTools APIs.
-// ================================================================
-window.LDPanel = {
-  setupButtons: setupButtons,
-  handleEval: handleEval,
-  handleSent: handleSent,
-  handleGoals: handleGoals,
-  handleStreamOpen: handleStreamOpen,
-  handleStreamEvent: handleStreamEvent,
-  clearAllData: clearAllData,
-  showToast: showToast,
-  isLaunchDarklyUrl: isLaunchDarklyUrl,
-  parseContextHashFromUrl: parseContextHashFromUrl,
-  parseClientIDFromUrl: parseClientIDFromUrl,
-  parseUrlForContext: parseUrlForContext,
-  getTimestamp: getTimestamp
-};
+if (typeof window !== 'undefined') {
+  window.LDPanel = {
+    setupButtons: setupButtons,
+    handleEval: handleEval,
+    handleSent: handleSent,
+    handleGoals: handleGoals,
+    handleStreamOpen: handleStreamOpen,
+    handleStreamEvent: handleStreamEvent,
+    clearAllData: clearAllData,
+    showToast: showToast,
+    isLaunchDarklyUrl: isLaunchDarklyUrl,
+    parseContextHashFromUrl: parseContextHashFromUrl,
+    parseClientIDFromUrl: parseClientIDFromUrl,
+    parseUrlForContext: parseUrlForContext,
+    getTimestamp: getTimestamp
+  };
+}
