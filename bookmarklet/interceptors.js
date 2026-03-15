@@ -62,7 +62,8 @@
   // URL helpers — delegate to panel.js (LDPanel) for shared functions
   // ----------------------------------------------------------------
   function isLDUrl(url) {
-    return api().isLaunchDarklyUrl(url);
+    var a = api();
+    return a ? a.isLaunchDarklyUrl(url) : false;
   }
 
   // ----------------------------------------------------------------
