@@ -47,7 +47,7 @@
   // Resolve base URL (works on localhost AND GitHub Pages subpaths)
   // ================================================================
   const base = window.location.origin +
-    window.location.pathname.replace(/\/test\.html$/, '').replace(/\/$/, '') +
+    window.location.pathname.replace(/\/[^/]*\.html$/, '').replace(/\/$/, '') +
     '/dist/v1';
 
   // ================================================================

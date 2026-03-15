@@ -13,7 +13,7 @@
   // Dynamic URLs — resolve dist path relative to current page
   // ----------------------------------------------------------------
   const base = window.location.origin +
-    window.location.pathname.replace(/\/index\.html$/, '').replace(/\/$/, '') +
+    window.location.pathname.replace(/\/[^/]*\.html$/, '').replace(/\/$/, '') +
     '/dist/v1';
 
   const bmCode = "javascript:void(function(){var s=document.createElement('script');" +
