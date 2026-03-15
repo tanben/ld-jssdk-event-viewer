@@ -1,5 +1,5 @@
 /**
- * Test harness for the LD SDK Event Viewer demo page (test.html).
+ * Demo harness for the LD SDK Event Viewer (test.html).
  *
  * Provides:
  *   - Mock LD server responses (fetch intercept) for offline testing

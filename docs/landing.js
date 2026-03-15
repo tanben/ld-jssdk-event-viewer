@@ -1,5 +1,5 @@
 /**
- * Main script for the LD SDK Event Viewer docs landing page (index.html).
+ * Landing page script for the LD SDK Event Viewer (index.html).
  *
  * Handles:
  *   - Dynamic bookmarklet URL generation based on current origin
