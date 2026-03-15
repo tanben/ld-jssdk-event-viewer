@@ -88,6 +88,11 @@
     padding: 10px;
 }
 
+/* Hide the original <h1> from panel.html since the header has its own */
+.panel-body > h1 {
+    display: none;
+}
+
 /* ================================================================
    Toast container — positioned relative to panel
    ================================================================ */

@@ -18,10 +18,9 @@
  *
  * Module load order (sequential, each depends on the previous):
  *   1. interceptors.js   — event bus + fetch/XHR/EventSource patches
- *   2. HTM (CDN)         — tagged template library (sets self.htm)
- *   3. panel-html.js     — HTML templates (needs htm)
- *   4. panel.js          — extension panel logic (needs DOM)
- *   5. bookmarklet.js    — wires everything together (needs all above)
+ *   2. panel.html (fetch) — extension panel markup (reused directly)
+ *   3. panel.js           — extension panel logic (needs DOM)
+ *   4. bookmarklet.js     — wires everything together (needs all above)
  */
 (async function () {
   'use strict';
@@ -84,12 +83,15 @@
   // ----------------------------------------------------------------
   // Load modules sequentially (each depends on the previous)
   // ----------------------------------------------------------------
-  const HTM_CDN_URL = 'https://unpkg.com/htm@3/dist/htm.js';
-
   try {
     await loadScript(baseUrl + '/interceptors.js');
-    await loadScript(HTM_CDN_URL);
-    await loadScript(baseUrl + '/panel-html.js');
+
+    // Fetch panel.html and extract <body> content for reuse
+    const response = await fetch(baseUrl + '/panel.html');
+    const html = await response.text();
+    const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+    LDJSSDK.panelBodyHTML = bodyMatch ? bodyMatch[1].trim() : '';
+
     await loadScript(baseUrl + '/panel.js');
     await loadScript(baseUrl + '/bookmarklet.js');
 

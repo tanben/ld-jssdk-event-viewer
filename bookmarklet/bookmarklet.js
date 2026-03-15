@@ -4,17 +4,18 @@
  *
  * CSS is loaded into <head> via <link> elements — the extension's
  * mystyle.css plus a small overrides file for bookmarklet-specific
- * panel chrome. The panel HTML lives inside a wrapper div in the page.
+ * panel chrome. The panel HTML is fetched from panel.html (the same
+ * file the extension uses) by loader.js.
  *
  * data-action pattern:
- *   Interactive elements in panel-html.js use data-action="event->handlerName"
- *   attributes. wireActions() reads these and binds event listeners to the
+ *   Interactive elements use data-action="event->handlerName" attributes.
+ *   wireActions() reads these and binds event listeners to the
  *   corresponding handler functions, similar to Stimulus.
  *
  * Requires (loaded in order by loader.js):
- *   - interceptors.js     (LDJSSDK.bus)
- *   - panel-html.js       (LDJSSDK.panelHTML)
- *   - panel.js            (window.LDPanel)
+ *   - interceptors.js        (LDJSSDK.bus)
+ *   - panel.html (fetched)   (LDJSSDK.panelBodyHTML)
+ *   - panel.js               (window.LDPanel)
  */
 (function () {
   'use strict';
@@ -33,12 +34,12 @@
   LDJSSDK.active = true;
 
   const bus = LDJSSDK.bus;
-  const panelHTML = LDJSSDK.panelHTML;
+  const panelBodyHTML = LDJSSDK.panelBodyHTML;
 
-  if (!bus || !panelHTML || !api) {
+  if (!bus || !panelBodyHTML || !api) {
     console.error('[LD Event Viewer] Missing dependencies:', {
       bus: !!bus,
-      panelHTML: !!panelHTML,
+      panelBodyHTML: !!panelBodyHTML,
       api: !!api,
     });
     return;
@@ -97,7 +98,19 @@
   function buildPanel() {
     const wrapper = document.createElement('div');
     wrapper.className = 'ld-viewer-panel';
-    wrapper.innerHTML = panelHTML();
+
+    // Bookmarklet chrome: draggable header with minimize/close controls,
+    // wrapping panel.html's body content in a scrollable container.
+    wrapper.innerHTML =
+      '<div class="panel-header">' +
+        '<div class="panel-title-row">' +
+          '<h1>LD SDK Event Viewer</h1>' +
+          '<button id="minimizeBtn" class="panel-control-btn" data-action="click->minimize" title="Minimize">\u2015</button>' +
+          '<button id="closeBtn" class="panel-control-btn close" data-action="click->close" title="Close">\u00D7</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="panel-body">' + panelBodyHTML + '</div>';
+
     host.appendChild(wrapper);
   }
 
