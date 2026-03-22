@@ -1,49 +1,74 @@
-# LaunchDarkly Javascript SDK Event Viewer
+# LaunchDarkly JavaScript SDK Event Viewer
 
-The LaunchDarkly JavaScript SDK Event Viewer is a Chrome extension designed to capture, display, and validate various events and data related to the LaunchDarkly JavaScript Client SDK. This tool is for developers and QA teams who want to monitor and debug their LaunchDarkly implementations.
+A Chrome DevTools extension and **bookmarklet** for monitoring and debugging
+LaunchDarkly JavaScript SDK activity in real time. Inspect flag evaluations,
+context payloads, streaming connections, conversion metrics, and every event
+the SDK sends or receives.
 
-![img](img/overview.jpeg)
+## Status
 
-### Features
-1. Capture the following events
-    *  flag evaluations
-    *  identity events
-    *  custom events
-    *  click and pageview events
-    *  stream updates
- 2. Display and validate Conversion Metrics
-    *  show conversion metrics that matches URL and element on the page using the CSS selector specified
-3.  Log payload/details of the following SENT and RECEIVED events:
-    *  flag evaluations
-    *  identity events
-    *  custom events
-    *  click and pageview events
-    *  stream updates
-4. Display Feature flags loaded by the JS client SDK.
+**Maintenance mode.** This fork extends the
+[upstream project](https://github.com/tanben/ld-jssdk-event-viewer) with a
+fully working bookmarklet implementation served from GitHub Pages. The upstream
+repository remains the canonical source for the Chrome extension; periodic
+syncs will pull in any upstream improvements.
 
-## Installation
-1. Clone this repository to your local machine:
+> Contributions that improve the bookmarklet or keep the fork in sync with
+> upstream are welcome. New standalone features should generally be proposed
+> upstream first.
+
+## What this fork adds
+
+- **Bookmarklet loader** (`bookmarklet/`) &mdash; intercepts LD SDK traffic via
+  monkey-patched `fetch`, `XMLHttpRequest`, and `EventSource`; renders the same
+  panel UI as an isolated Shadow DOM overlay on any page.
+- **GitHub Pages site** (`docs/`) &mdash; landing page, interactive demo, and
+  hosted bookmarklet assets at
+  <https://flowgrammer-ld.github.io/ld-jssdk-event-viewer/>.
+- **Build script** (`build.sh`) &mdash; copies source into `docs/dist/v1/` for
+  distribution.
+
+## Quick start
+
+### Bookmarklet (any browser)
+
+Drag the **Launch Event Viewer** button from the
+[landing page](https://flowgrammer-ld.github.io/ld-jssdk-event-viewer/) to
+your bookmarks bar, then click it on any page running the LD JS SDK.
+
+### Chrome extension
+
+1. Clone this repository.
+2. Open `chrome://extensions/`, enable **Developer mode**.
+3. Click **Load unpacked** and select the repo root.
+4. Open DevTools on any page &rarr; select the **LaunchPad** tab.
+
+## Features
+
+- Flag evaluations with values, variations, and evaluation reasons
+- Full context/user payload inspection
+- Filterable event timeline (custom, identify, click, pageview, summary)
+- Conversion metric validation (URL and CSS selector matching)
+- Real-time SSE stream monitoring
+- HAR timing breakdown for SDK requests
+- Export all captured data as JSON
+
+## Development
+
+```bash
+npm run dev      # build + serve docs on localhost:8080
+npm run build    # copy source to docs/dist/v1/
+npm run serve    # serve docs/ with CORS headers
 ```
-git clone https://github.com/tanben/ld-jssdk-event-viewer.git
 
+## Syncing with upstream
+
+```bash
+git fetch upstream
+git merge upstream/main
+# Resolve any conflicts, rebuild, and push.
 ```
 
-2. Open Google Chrome and navigate to chrome://extensions/.
-3. Enable "Developer mode" using the toggle in the top right corner.
-4. Click on "Load unpacked" and select the directory where you cloned the repository.
-5. The LaunchDarkly JavaScript SDK Event Viewer extension should now be loaded and visible in your Chrome extensions list.
+## License
 
- 
-## Usage
-
-1. Navigate to the web page where you want to monitor LaunchDarkly events.
-2. Open the Chrome Developer Tools (right-click anywhere on the page, select "Inspect" or use the keyboard shortcut `Ctrl+Shift+I` on Windows/Linux or `Cmd+Option+I` on Mac).
-3. Select the **"Launchpad"** tab in the Developer Tools.
-4. Reload your web page to start capturing events.
-5. Interact with your web page as needed, and the Launchpad tab will display the captured events, Conversion Metrics, Feature Flags, and other relevant data.
-
-## Bookmarklet
-
-A bookmarklet version is also available for use in any browser without installing the extension. It intercepts LD SDK traffic by monkey-patching `fetch`, `XMLHttpRequest`, and `EventSource`, and displays the same panel UI as an overlay on the page.
-
-See `bookmarklet/` for source and `build.sh` to generate distributable assets.
+See [LICENSE](LICENSE).
